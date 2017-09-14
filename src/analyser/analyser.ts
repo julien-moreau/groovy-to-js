@@ -46,8 +46,7 @@ export default class Analyser {
             } else if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
                 const newScope = new Scope(scope);
                 str += '{\n' + this.parse(newScope) + '\n}';
-            }
-            else {
+            } else {
                 this.tokenizer.getNextToken();
             }
         }
@@ -93,7 +92,7 @@ export default class Analyser {
             } else if (this.tokenizer.match(TokenType.OPERATOR)) {
                 // Check if operator supported
                 if (left && left.type === ScopeElementType.ARRAY)
-                    throw new Error('');
+                    throw new Error('Operator-assignation are forbidden in JavaScript');
 
                 str += ' ' + this.tokenizer.currentOperator + ' ';
             } else {
@@ -162,10 +161,9 @@ export default class Analyser {
             if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
                 str += this.array();
                 continue;
-            } else {
-                str += this.tokenizer.lastString;
             }
 
+            str += this.tokenizer.lastString;
             this.tokenizer.getNextToken();
         }
 
