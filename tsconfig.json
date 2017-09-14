@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "declaration": true,
+        "sourceMap": true,
+        "outDir": "./.build",
+        "typeRoots": [
+            "node_modules/@types"
+        ]
+    }
+}
