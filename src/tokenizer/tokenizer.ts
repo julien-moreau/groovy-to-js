@@ -142,6 +142,7 @@ export default class Tokenizer {
             case '{': return this.currentToken = TokenType.BRACKET_OPEN;
             case '}': return this.currentToken = TokenType.BRACKET_CLOSE;
             case '\n': return this.currentToken = TokenType.LINE_END;
+            case ':': return this.currentToken = TokenType.DESCRIPTOR;
             default: {
                 if (this.isDigit.test(c)) {
                     this.currentToken = TokenType.NUMBER;

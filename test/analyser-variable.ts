@@ -57,4 +57,28 @@ describe('An Analyser', () => {
         const result = analyser.parse();
         assert(result === 'var myvar = ["hello1",["hello2","hello3"]];');
     });
+
+    it('should parse a variable definition as a map', () => {
+        const toParse = 'def emptyMap = [:];';
+        const analyser = new Analyser(toParse);
+
+        const result = analyser.parse();
+        assert(result === 'var emptyMap = {  };');
+    });
+
+    it('should parse a variable definition as a map with one field in it', () => {
+        const toParse = 'def map = [a: "value"];';
+        const analyser = new Analyser(toParse);
+
+        const result = analyser.parse();
+        assert(result === 'var map = { a: "value" };');
+    });
+
+    it('should parse a variable definition as a map with several fields in it', () => {
+        const toParse = 'def map = [a: "value", b: 0, arr: [1, 2, 3], strs: ["1", "2", ""]];';
+        const analyser = new Analyser(toParse);
+
+        const result = analyser.parse();
+        assert(result === 'var map = { a: "value", b: 0, arr: [1,2,3], strs: ["1","2",""] };');
+    });
 });

@@ -155,12 +155,19 @@ export default class Analyser {
      * Parses an array expression
      */
     public array (): string {
+        if (this.tokenizer.match(TokenType.DESCRIPTOR))
+            return '{ ' + this.map() + ' }';
+
         let str = '[';
+        let identifier = '';
 
         while (!this.tokenizer.match(TokenType.ACCESSOR_RIGHT)) {
             if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
                 str += this.array();
                 continue;
+            } else if ((identifier = <string> this.tokenizer.matchIdentifier())) {
+                if (this.tokenizer.match(TokenType.DESCRIPTOR))
+                    return str = '{ ' + identifier + ': ' + this.map() + ' }';
             }
 
             str += this.tokenizer.lastString;
@@ -168,6 +175,33 @@ export default class Analyser {
         }
 
         return str + ']';
+    }
+
+    /**
+     * Parses a map expression
+     */
+    public map (): string {
+        let str = '';
+        let previousToken = TokenType.UNKNOWN;
+
+        while (!this.tokenizer.match(TokenType.ACCESSOR_RIGHT)) {
+            if (this.tokenizer.match(TokenType.IDENTIFIER)) {
+                str += ' ' + this.tokenizer.currentIdentifier;
+            } else if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
+                str += this.array();
+            } else {
+                str += this.tokenizer.lastString;
+                
+                if (previousToken === TokenType.DESCRIPTOR)
+                    str += ' ';
+
+                this.tokenizer.getNextToken();
+            }
+
+            previousToken = this.tokenizer.currentToken;
+        }
+
+        return str;
     }
 
     /**

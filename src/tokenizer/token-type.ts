@@ -11,6 +11,7 @@ export enum TokenType {
     INSTRUCTION_END = 10,
     OPERATOR = 11,
     OPERATOR_ASSIGN = 12,
+    DESCRIPTOR = 13,
 
     ERROR = 100,
 
