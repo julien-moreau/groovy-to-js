@@ -91,4 +91,20 @@ describe('An Complete Analyser', () => {
         const result = Analyser.convert(toParse);
         assert(execute(result) === 10);
     });
+
+    it.only('should use the for loop with a in keyword', () => {
+        const toParse = `
+            def a = 0;
+            def arr = [1, 2, 3];
+
+            for (i in arr) {
+                a++;
+            }
+
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        assert(execute(result) === 10);
+    });
 });

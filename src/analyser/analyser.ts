@@ -107,10 +107,11 @@ export default class Analyser {
             throw new Error('A for loop begins with an identifier such as a variable name of a def');
 
         // Declaration
-        if (identifier === 'def')
+        if (identifier === 'def') {
             str += 'var ' + this.variable(scope).str;
-        else
+        } else {
             str = 'var ' + identifier + this.expression(scope, new Variable(scope, identifier, ScopeElementType.NUMBER));
+        }
 
         // Condition
         if ((identifier = <string>this.tokenizer.matchIdentifier())) {
