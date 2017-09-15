@@ -18,7 +18,7 @@ export default class Tokenizer {
 
     private isLetterOrDigitPattern: RegExp = /^[a-zA-Z0-9]+$/;
     private isDigit: RegExp = /^[0-9]+$/;
-    private isOperator: RegExp = /^[-.+.*./]+$/;
+    private isOperator: RegExp = /^[-.+.*./.<.>]+$/;
 
     /**
      * Constructor
@@ -199,8 +199,9 @@ export default class Tokenizer {
                     this.currentOperator = c;
 
                     c = this.read();
-                    if (c === '=') {
-                        this.lastString += c;
+                    if (c === '=' || this.isOperator.test(c)) {
+                        this.currentOperator += c;
+                        this.lastString = this.currentOperator;
                         this.currentToken = TokenType.OPERATOR_ASSIGN;
                     }
                 }

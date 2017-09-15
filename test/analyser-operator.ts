@@ -14,7 +14,7 @@ describe('An Analyser', () => {
         const analyser = new Analyser(toParse);
 
         const result = analyser.parse();
-        assert(result === 'var myvar = 1;var myvar2 = 2;var result = myvar - 2;');
+        assert(result.replace(/\n/g, '') === 'var myvar = 1;var myvar2 = 2;var result = myvar - 2;');
     });
 
     it('should throw an error when calling an operator with arrays', () => {

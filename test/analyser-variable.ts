@@ -81,4 +81,12 @@ describe('An Analyser', () => {
         const result = analyser.parse();
         assert(result === 'var map = { a: "value", b: 0, arr: [1,2,3], strs: ["1","2",""] };');
     });
+
+    it('should parse a variable definition as a map with several fields in it which can be a map', () => {
+        const toParse = 'def map = [a: "value", m: [a: "value2"]];';
+        const analyser = new Analyser(toParse);
+
+        const result = analyser.parse();
+        assert(result === 'var map = { a: "value", m: { a: "value2" } };');
+    });
 });

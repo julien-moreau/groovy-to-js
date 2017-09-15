@@ -32,9 +32,9 @@ describe('An Analyser', () => {
         const analyser = new Analyser(toParse);
 
         const result = analyser.parse();
-        assert(result.replace(/[ \t]/g, '') === `var myvar = 0;var myvar2 = 1;
+        assert(result.replace(/[ .\t.\n]/g, '') === `var myvar = 0;var myvar2 = 1;
         if (myvar==0){
             var myvar3 = 2;
-        }`.replace(/[ \t]/g, ''));
+        }`.replace(/[ .\t.\n]/g, ''));
     });
 });

@@ -26,6 +26,7 @@ export default class Analyser {
 
         // Start with an empty string
         let str = '';
+        let identifier = '';
 
         if (!scope)
             scope = this.scope;
@@ -42,11 +43,26 @@ export default class Analyser {
                 str += 'var ' + variable.str;
                 scope.elements.push(new Variable(scope, variable.name, variable.type));
             } else if (this.tokenizer.matchIdentifier('if')) {
-                str += '\nif ' + this.if(scope);
+                str += '\nif ' + this.condition(scope);
+            } else if (this.tokenizer.matchIdentifier('else')) {
+                str += ' else' + this.else(scope);
+            } else if (this.tokenizer.matchIdentifier('while')) {
+                str += 'while ' + this.condition(scope);
+            } else if (this.tokenizer.matchIdentifier('for')) {
+                str += 'for (' + this.for(scope) + ')';
+            } else if (this.tokenizer.matchIdentifier('return')) {
+                str += 'return ';
             } else if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
                 const newScope = new Scope(scope);
                 str += '{\n' + this.parse(newScope) + '\n}';
+            } else if (this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
+                return str;
+            } else if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
+                str += this.array(scope);
+            } else if ((identifier = <string> this.tokenizer.matchIdentifier())) {
+                str += identifier + ' ' + this.expression(scope);
             } else {
+                str += this.tokenizer.lastString;
                 this.tokenizer.getNextToken();
             }
         }
@@ -54,11 +70,61 @@ export default class Analyser {
         return str;
     }
 
-    public if (scope: Scope): string {
+    /**
+     * Parses a condition expression
+     * @param scope the if scope
+     */
+    public condition (scope: Scope): string {
         if (!this.tokenizer.match(TokenType.PARENTHESIS_OPEN))
             throw new Error('if must be followed by an opening parenthesis');
 
         return '(' + this.expression(scope) + ')';
+    }
+
+    /**
+     * Parses a else expression
+     * @param scope the else scope
+     */
+    public else (scope: Scope): string {
+        if (this.tokenizer.matchIdentifier('if'))
+            return 'if ' + this.condition(scope);
+
+        return ' ';
+    }
+
+    /**
+     * Parses a for expression
+     * @param scope the for scope
+     */
+    public for (scope: Scope): string {
+        if (!this.tokenizer.match(TokenType.PARENTHESIS_OPEN))
+            throw new Error('for must be followed by an opening parenthesis');
+
+        let str = '';
+        let identifier = '';
+
+        if (!(identifier = <string> this.tokenizer.matchIdentifier()))
+            throw new Error('A for loop begins with an identifier such as a variable name of a def');
+
+        // Declaration
+        if (identifier === 'def')
+            str += 'var ' + this.variable(scope).str;
+        else
+            str = 'var ' + identifier + this.expression(scope, new Variable(scope, identifier, ScopeElementType.NUMBER));
+
+        // Condition
+        if ((identifier = <string>this.tokenizer.matchIdentifier())) {
+            str += identifier + this.expression(scope);
+        }
+
+        // Operation
+        if ((identifier = <string>this.tokenizer.matchIdentifier())) {
+            str += identifier + this.expression(scope);
+        } else {
+
+        }
+
+        return str;
     }
 
     /**
@@ -80,11 +146,7 @@ export default class Analyser {
                 str += this.expression(scope);
                 continue;
             } else if ((variable = <string> this.tokenizer.matchIdentifier())) {
-                // Identifier:
-                // Variable is not defined
-                if (!Scope.exists(scope, s => s.name === variable))
-                    throw new Error('Variable');
-
+                // Identifier
                 str += variable;
             } else if (this.tokenizer.match(TokenType.OPERATOR_ASSIGN)) {
                 // Assign -= += *= /=
@@ -134,7 +196,7 @@ export default class Analyser {
             result.type = ScopeElementType.NUMBER;
         } else if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
             // An array
-            result.str += this.array();
+            result.str += this.array(scope);
             result.type = ScopeElementType.ARRAY;
         } else if ((string = this.tokenizer.matchString())) {
             // A string
@@ -154,24 +216,27 @@ export default class Analyser {
     /**
      * Parses an array expression
      */
-    public array (): string {
+    public array (scope: Scope): string {
         if (this.tokenizer.match(TokenType.DESCRIPTOR))
-            return '{ ' + this.map() + ' }';
+            return '{ ' + this.map(scope) + ' }';
 
         let str = '[';
         let identifier = '';
 
         while (!this.tokenizer.match(TokenType.ACCESSOR_RIGHT)) {
             if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
-                str += this.array();
+                str += this.array(scope);
                 continue;
             } else if ((identifier = <string> this.tokenizer.matchIdentifier())) {
+                // An identifier, then it is a map
                 if (this.tokenizer.match(TokenType.DESCRIPTOR))
-                    return str = '{ ' + identifier + ': ' + this.map() + ' }';
-            }
+                    return str = '{ ' + identifier + ': ' + this.map(scope) + ' }';
 
-            str += this.tokenizer.lastString;
-            this.tokenizer.getNextToken();
+                str += identifier;
+            } else {
+                str += this.tokenizer.lastString;
+                this.tokenizer.getNextToken();
+            }
         }
 
         return str + ']';
@@ -180,7 +245,7 @@ export default class Analyser {
     /**
      * Parses a map expression
      */
-    public map (): string {
+    public map (scope: Scope): string {
         let str = '';
         let previousToken = TokenType.UNKNOWN;
 
@@ -188,7 +253,7 @@ export default class Analyser {
             if (this.tokenizer.match(TokenType.IDENTIFIER)) {
                 str += ' ' + this.tokenizer.currentIdentifier;
             } else if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
-                str += this.array();
+                str += this.array(scope);
             } else {
                 str += this.tokenizer.lastString;
                 
