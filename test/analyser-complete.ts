@@ -57,6 +57,34 @@ describe('A Complete Analyser', () => {
         assert(execute(result, 'a', '1') === 1);
     });
 
+    it('should take a decision using a complex if and else', () => {
+        const toParse = `
+            if (a == 0 && a == 0) {
+                return 0;
+            } else {
+                return 1;
+            }
+        `;
+
+        const result = Analyser.convert(toParse);
+        assert(execute(result, 'a', '0') === 0);
+        assert(execute(result, 'a', '1') === 1);
+    });
+
+    it('should take a decision using if and else if', () => {
+        const toParse = `
+            if (a == 0) {
+                return 0;
+            } else if (a == 1 && a == 1) {
+                return 1;
+            }
+        `;
+
+        const result = Analyser.convert(toParse);
+        assert(execute(result, 'a', '0') === 0);
+        assert(execute(result, 'a', '1') === 1);
+    });
+
     it('should use the while loop', () => {
         const toParse = `
             def a = 0;
@@ -137,6 +165,23 @@ describe('A Complete Analyser', () => {
             def a = 0;
 
             for (i in 0..19) {
+                a++;
+            }
+
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        assert(execute(result) === 20);
+    });
+
+    it('should use the for loop with a in keyword and a range as value with identifiers', () => {
+        const toParse = `
+            def a = 0;
+            def start = 0;
+            def end = 19;
+
+            for (i in start..end) {
                 a++;
             }
 

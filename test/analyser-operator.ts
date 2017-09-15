@@ -32,4 +32,71 @@ describe('An Analyser', () => {
             assert(e.message === 'Operator-assignation are forbidden in JavaScript');
         }
     });
+
+    it('should throw an error when calling an operator with arrays of an object', () => {
+        const toParse = `
+            def map = [
+                a: [0, 1],
+                b: false
+            ];
+
+            def result = map.a - 2;`;
+        const analyser = new Analyser(toParse);
+        let hasError = false;
+
+        try {
+            const js = analyser.parse();
+        } catch (e) {
+            hasError = true;
+            assert(e.message === 'Operator-assignation are forbidden in JavaScript');
+        }
+
+        assert(hasError);
+    });
+
+    it('should throw an error when calling an operator with arrays of a complex object', () => {
+        const toParse = `
+            def map = [
+                a: [
+                    b: [1, 2]
+                ]
+            ];
+
+            def result = map.a.b - 2;`;
+        const analyser = new Analyser(toParse);
+        let hasError = false;
+
+        try {
+            const js = analyser.parse();
+        } catch (e) {
+            hasError = true;
+            assert(e.message === 'Operator-assignation are forbidden in JavaScript');
+        }
+
+        assert(hasError);
+    });
+
+    it('should throw an error when calling an operator with arrays of a deep complex object', () => {
+        const toParse = `
+            def map = [
+                a: [
+                    b: [1, [
+                        a: [1, 2]
+                    ]]
+                ]
+            ];
+
+            def result = map.a.b[1].a - 2;`;
+        const analyser = new Analyser(toParse);
+        let hasError = false;
+
+        try {
+            const js = analyser.parse();
+        } catch (e) {
+            hasError = true;
+            assert(e.message === 'Operator-assignation are forbidden in JavaScript');
+        }
+
+        assert(hasError);
+    });
 });

@@ -27,6 +27,7 @@ export default class Analyser {
         // Start with an empty string
         let str = '';
         let identifier = '';
+        let accessor = '';
 
         if (!scope)
             scope = this.scope;
@@ -58,9 +59,12 @@ export default class Analyser {
             } else if (this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
                 return str;
             } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
-                str += this.array(scope);
+                const array = this.array(scope);
+                str += array.str;
             } else if ((identifier = <string> this.tokenizer.matchIdentifier())) {
                 str += identifier + ' ' + this.expression(scope);
+            } else if ((accessor = this.tokenizer.matchAccessor())) {
+                str += this.tokenizer.currentAccessor + this.expression(scope, Scope.findElement(scope, e => e.name === this.tokenizer.currentAccessor));
             } else {
                 str += this.tokenizer.lastString;
                 this.tokenizer.getNextToken();
@@ -87,7 +91,7 @@ export default class Analyser {
      */
     public else (scope: Scope): string {
         if (this.tokenizer.matchIdentifier('if'))
-            return 'if ' + this.condition(scope);
+            return ' if ' + this.condition(scope);
 
         return ' ';
     }
@@ -211,8 +215,9 @@ export default class Analyser {
             result.type = ScopeElementType.NUMBER;
         } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
             // An array
-            result.str += this.array(scope);
-            result.type = ScopeElementType.ARRAY;
+            const array = this.array(scope, result.name);
+            result.str += array.str;
+            result.type = array.type;
         } else if ((string = this.tokenizer.matchString())) {
             // A string
             result.str += string;
@@ -231,21 +236,23 @@ export default class Analyser {
     /**
      * Parses an array expression
      */
-    public array (scope: Scope): string {
+    public array (scope: Scope, name: string = 'undefined'): { str: string, type: ScopeElementType } {
         if (this.tokenizer.match(TokenType.DESCRIPTOR))
-            return '{ ' + this.map(scope) + ' }';
+            return { str: '{ ' + this.map(scope) + ' }', type: ScopeElementType.MAP };
 
         let str = '[';
         let identifier = '';
 
         while (!this.tokenizer.match(TokenType.ACCESSOR_CLOSE)) {
             if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
-                str += this.array(scope);
+                const array = this.array(scope);
+                str += array.str;
                 continue;
             } else if ((identifier = <string> this.tokenizer.matchIdentifier())) {
                 // An identifier, then it is a map
-                if (this.tokenizer.match(TokenType.DESCRIPTOR))
-                    return str = '{ ' + identifier + ': ' + this.map(scope) + ' }';
+                if (this.tokenizer.match(TokenType.DESCRIPTOR)) {
+                    return { str: '{ ' + identifier + ': ' + this.map(scope, identifier, name + '.') + ' }', type: ScopeElementType.MAP };
+                }
 
                 str += identifier;
             } else {
@@ -254,26 +261,32 @@ export default class Analyser {
             }
         }
 
-        return str + ']';
+        return { str: str + ']', type: ScopeElementType.ARRAY };
     }
 
     /**
      * Parses a map expression
      */
-    public map (scope: Scope): string {
+    public map (scope: Scope, name: string = '', prefix: string = ''): string {
         let str = '';
         let previousToken = TokenType.UNKNOWN;
+        let accessor = prefix + name;
 
         while (!this.tokenizer.match(TokenType.ACCESSOR_CLOSE)) {
             if (this.tokenizer.match(TokenType.IDENTIFIER)) {
                 str += ' ' + this.tokenizer.currentIdentifier;
+                name = this.tokenizer.currentIdentifier;
             } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
-                str += this.array(scope);
+                const array = this.array(scope,  accessor);
+                str += array.str;
+                scope.elements.push(new Variable(scope, prefix +  name, array.type));
             } else {
                 str += this.tokenizer.lastString;
                 
-                if (previousToken === TokenType.DESCRIPTOR)
+                if (previousToken === TokenType.DESCRIPTOR) {
                     str += ' ';
+                    name;
+                }
 
                 this.tokenizer.getNextToken();
             }

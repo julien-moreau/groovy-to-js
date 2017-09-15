@@ -6,11 +6,17 @@
         "@types/node": "8.0.19",
         "mocha": "3.5.3",
         "typescript": "2.5.2",
-        "assert": "1.4.1"
+        "assert": "1.4.1",
+        "nyc": "11.2.1"
+    },
+    "dependencies": {
+        "js-beautify": "1.6.14"
     },
     "scripts": {
         "watch": "tsc -p . --watch",
         "compile": "tsc -p .",
-        "clean": "rm -rf .build"
+        "clean": "rm -rf .build",
+        "test": "npm run compile && mocha --recursive ./.build/test/**/*.js",
+        "cov": "nyc --reporter=lcov --reporter=text-lcov npm test"
     }
 }

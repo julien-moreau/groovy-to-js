@@ -2,6 +2,7 @@ export enum ScopeElementType {
     ANY = 0,
     NUMBER,
     ARRAY,
+    MAP,
     STRING,
     FUNCTION
 }

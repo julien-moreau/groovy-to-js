@@ -10,6 +10,7 @@ export default class Tokenizer {
     public currentNumber: string = '';
     public currentOperator: string = '';
     public currentRange: string = '';
+    public currentAccessor: string = '';
 
     public lastString = '';
 
@@ -119,6 +120,19 @@ export default class Tokenizer {
     }
 
     /**
+     * Matches if the current token is an accessor (x.something) -> x
+     */
+    public matchAccessor(): string {
+        if (this.currentToken === TokenType.ACCESSOR) {
+            const accessor = this.currentAccessor;
+            this.getNextToken();
+            return accessor;
+        }
+
+        return null;
+    }
+
+    /**
      * Returns the next token in the string to parse
      */
     public getNextToken (): TokenType {
@@ -145,6 +159,7 @@ export default class Tokenizer {
             case '\n': return this.currentToken = TokenType.LINE_END;
             case ':': return this.currentToken = TokenType.DESCRIPTOR;
             default: {
+                // Number
                 if (this.isDigit.test(c)) {
                     this.currentToken = TokenType.NUMBER;
                     this.currentNumber = c;
@@ -167,17 +182,46 @@ export default class Tokenizer {
 
                     this.lastString = this.currentNumber;
                 }
-                else if (c === '_' || this.isLetterOrDigitPattern.test(c)) { // Identifier
+                // Identifier or accessor or range
+                else if (c === '_' || this.isLetterOrDigitPattern.test(c)) {
                     this.currentToken = TokenType.IDENTIFIER;
                     this.currentIdentifier = c;
 
-                    while (!this.isEnd() && (this.isLetterOrDigitPattern.test(c = this.peek()) || c === '_')) {
+                    let count = 0;
+                    let lastChar = '';
+                    let isAccessor = false;
+
+                    while (!this.isEnd() && (this.isLetterOrDigitPattern.test(c = this.peek()) || c === '_' || c === '.')) {
                         this.currentIdentifier += c;
                         this.forward();
+
+                        if (c === '.') {
+                            count++;
+                            isAccessor = true;
+
+                            if (lastChar === '.')
+                                isAccessor = false;
+                        }
+
+                        lastChar = c;
+                    }
+
+                    if (count === 1 || isAccessor) {
+                        this.currentToken = TokenType.ACCESSOR;
+                        this.currentAccessor = this.currentIdentifier;
+                    } else if (count === 2) {
+                        this.currentToken = TokenType.RANGE;
+                        this.currentRange = this.currentIdentifier;
+                    } else if (count === 1) {
+                        this.currentToken = TokenType.ACCESSOR;
+                        this.currentAccessor = this.currentIdentifier;
+                    } else if (count > 2) {
+                        this.currentToken = TokenType.ERROR;
                     }
 
                     this.lastString = this.currentIdentifier;
                 }
+                // String
                 else if (c === '"' || c === "'") {
                     this.currentToken = TokenType.STRING;
                     this.currentString = c;
@@ -192,6 +236,7 @@ export default class Tokenizer {
                     
                     this.lastString = this.currentString;
                 }
+                // Assign or equality
                 else if (c === '=') {
                     this.currentToken = TokenType.ASSIGN;
                     let count = 1;
@@ -206,6 +251,7 @@ export default class Tokenizer {
                     if (count > 2)
                         this.currentToken = TokenType.ERROR;
                 }
+                // Operator
                 else if (this.isOperator.test(c)) {
                     this.currentToken = TokenType.OPERATOR;
                     this.currentOperator = c;
