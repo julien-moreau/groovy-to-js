@@ -12,12 +12,13 @@ export enum TokenType {
     OPERATOR = 11,
     OPERATOR_ASSIGN = 12,
     DESCRIPTOR = 13,
+    RANGE = 14,
 
     ERROR = 100,
 
     ACCESSOR = 1 << 10,
-    ACCESSOR_LEFT = 1 << 11,
-    ACCESSOR_RIGHT = 1 << 12,
+    ACCESSOR_OPEN = 1 << 11,
+    ACCESSOR_CLOSE = 1 << 12,
 
     PARENTHESIS = 1 << 20,
     PARENTHESIS_OPEN = 1 << 21,

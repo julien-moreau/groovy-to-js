@@ -57,7 +57,7 @@ export default class Analyser {
                 str += '{\n' + this.parse(newScope) + '\n}';
             } else if (this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
                 return str;
-            } else if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
+            } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
                 str += this.array(scope);
             } else if ((identifier = <string> this.tokenizer.matchIdentifier())) {
                 str += identifier + ' ' + this.expression(scope);
@@ -110,12 +110,21 @@ export default class Analyser {
         if (identifier === 'def') {
             str += 'var ' + this.variable(scope).str;
         } else {
-            str = 'var ' + identifier + this.expression(scope, new Variable(scope, identifier, ScopeElementType.NUMBER));
+            str = 'var ' + identifier;
+        }
+
+        if (this.tokenizer.match(TokenType.ASSIGN)) {
+            str += ' = ' + this.expression(scope, new Variable(scope, identifier, ScopeElementType.NUMBER));
         }
 
         // Condition
-        if ((identifier = <string>this.tokenizer.matchIdentifier())) {
-            str += identifier + this.expression(scope);
+        if ((identifier = <string> this.tokenizer.matchIdentifier())) {
+            if (identifier === 'in') {
+                // in
+                return str += ' in ' + this.expression(scope);
+            } else {
+                str += identifier + this.expression(scope);
+            }
         }
 
         // Operation
@@ -134,6 +143,7 @@ export default class Analyser {
     public expression (scope: Scope, left?: Scope): string {
         let str = '';
         let variable = '';
+        let number = '';
 
         while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
             // Prevent end of instruction
@@ -158,6 +168,10 @@ export default class Analyser {
                     throw new Error('Operator-assignation are forbidden in JavaScript');
 
                 str += ' ' + this.tokenizer.currentOperator + ' ';
+            } else if (this.tokenizer.match(TokenType.RANGE)) {
+                // Range, like 0..19 or start..19 or start..end or 0..end
+                const range = this.tokenizer.currentRange.split('..');
+                str += `range(${range[0]}, ${range[1]})`;
             } else {
                 str += this.tokenizer.lastString;
                 this.tokenizer.getNextToken();
@@ -195,7 +209,7 @@ export default class Analyser {
             // A number
             result.str += number;
             result.type = ScopeElementType.NUMBER;
-        } else if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
+        } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
             // An array
             result.str += this.array(scope);
             result.type = ScopeElementType.ARRAY;
@@ -224,8 +238,8 @@ export default class Analyser {
         let str = '[';
         let identifier = '';
 
-        while (!this.tokenizer.match(TokenType.ACCESSOR_RIGHT)) {
-            if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
+        while (!this.tokenizer.match(TokenType.ACCESSOR_CLOSE)) {
+            if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
                 str += this.array(scope);
                 continue;
             } else if ((identifier = <string> this.tokenizer.matchIdentifier())) {
@@ -250,10 +264,10 @@ export default class Analyser {
         let str = '';
         let previousToken = TokenType.UNKNOWN;
 
-        while (!this.tokenizer.match(TokenType.ACCESSOR_RIGHT)) {
+        while (!this.tokenizer.match(TokenType.ACCESSOR_CLOSE)) {
             if (this.tokenizer.match(TokenType.IDENTIFIER)) {
                 str += ' ' + this.tokenizer.currentIdentifier;
-            } else if (this.tokenizer.match(TokenType.ACCESSOR_LEFT)) {
+            } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
                 str += this.array(scope);
             } else {
                 str += this.tokenizer.lastString;

@@ -1,9 +1,17 @@
 import Analyser from '../src/analyser/analyser';
 import * as assert from 'assert';
 
-describe('An Complete Analyser', () => {
+describe('A Complete Analyser', () => {
     const execute = (code: string, args: string = '', values: string = ''): any => {
-        return eval(`(function (${args}) { ${code} })(${values})`);
+        return eval(`
+            var range = function (start, end) {
+                return Array.from({ length: end - start + 1 }, (v, k) => k + start); 
+            };
+
+            (function (${args}) {
+                ${code}
+            })(${values});
+        `);
     };
 
     it('should return a value', () => {
@@ -92,12 +100,12 @@ describe('An Complete Analyser', () => {
         assert(execute(result) === 10);
     });
 
-    it.only('should use the for loop with a in keyword', () => {
+    it('should use the for loop with a in keyword and a def', () => {
         const toParse = `
             def a = 0;
             def arr = [1, 2, 3];
 
-            for (i in arr) {
+            for (def i in arr) {
                 a++;
             }
 
@@ -105,6 +113,37 @@ describe('An Complete Analyser', () => {
         `;
 
         const result = Analyser.convert(toParse);
-        assert(execute(result) === 10);
+        assert(execute(result) === 3);
+    });
+
+    it('should use the for loop with a in keyword without a def', () => {
+        const toParse = `
+            def a = 0;
+            def arr = [1, 2, 3];
+
+            for (def i in arr) {
+                a++;
+            }
+
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        assert(execute(result) === 3);
+    });
+
+    it('should use the for loop with a in keyword and a range as value', () => {
+        const toParse = `
+            def a = 0;
+
+            for (i in 0..19) {
+                a++;
+            }
+
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        assert(execute(result) === 20);
     });
 });

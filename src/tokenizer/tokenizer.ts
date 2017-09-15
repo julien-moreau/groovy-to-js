@@ -9,6 +9,7 @@ export default class Tokenizer {
     public currentString: string = '';
     public currentNumber: string = '';
     public currentOperator: string = '';
+    public currentRange: string = '';
 
     public lastString = '';
 
@@ -134,8 +135,8 @@ export default class Tokenizer {
 
         switch (c) {
             case ';': return this.currentToken = TokenType.INSTRUCTION_END;
-            case '[': return this.currentToken = TokenType.ACCESSOR_LEFT;
-            case ']': return this.currentToken = TokenType.ACCESSOR_RIGHT;
+            case '[': return this.currentToken = TokenType.ACCESSOR_OPEN;
+            case ']': return this.currentToken = TokenType.ACCESSOR_CLOSE;
             case '(': return this.currentToken = TokenType.PARENTHESIS_OPEN;
             case ')': return this.currentToken = TokenType.PARENTHESIS_CLOSE;
             case ',': return this.currentToken = TokenType.COMMA;
@@ -147,10 +148,21 @@ export default class Tokenizer {
                 if (this.isDigit.test(c)) {
                     this.currentToken = TokenType.NUMBER;
                     this.currentNumber = c;
+                    let count = 0;
 
                     while (!this.isEnd() && (this.isDigit.test((c = this.peek())) || c === '.')) {
+                        if (c === '.')
+                            count++;
+                        
                         this.currentNumber += c;
                         this.forward();
+                    }
+
+                    if (count > 2)
+                        this.currentToken = TokenType.ERROR;
+                    else if (count === 2) {
+                        this.currentToken = TokenType.RANGE;
+                        this.currentRange = this.currentNumber;
                     }
 
                     this.lastString = this.currentNumber;
@@ -208,6 +220,10 @@ export default class Tokenizer {
 
                 break;
             }
+        }
+
+        if (this.currentToken === TokenType.ERROR) {
+            throw new Error('Invalid Groovy Script');
         }
 
         return this.currentToken;
