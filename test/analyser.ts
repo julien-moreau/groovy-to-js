@@ -11,7 +11,7 @@ describe('A Tokenizer', () => {
         assert(result === expected);
     };
 
-    it('should a variable definition', () => {
+    it('should parse a variable definition', () => {
         const str = 'def myvar = 0;\n';
         const analyser = new Analyser(str);
 
@@ -248,6 +248,18 @@ describe('A Tokenizer', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = [1,2,3];if (subtract(a, 1)){a ++;}`);
+    });
+
+    it('should parse a if with operators', () => {
+        const str = `
+            def a = [1, 2, 3];
+            if (a + 1) {
+                a++;
+            }`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];if (add(a, 1)){a ++;}`);
     });
 
     it('should parse a if with operators', () => {

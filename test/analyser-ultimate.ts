@@ -29,6 +29,18 @@ var subtract = function (a, b) {
     return a;
 };
 
+var add = function (a, b) {
+    if (b instanceof Array) {
+        for (var i = 0; i < b.length; i++) {
+            a.push(b[i]);
+        }
+    } else {
+        a.push(b);
+    }
+
+    return a;
+};
+
 (function (${args}) {
     ${code}
 })(${values});
@@ -88,5 +100,95 @@ var subtract = function (a, b) {
         const exec = execute(result);
 
         assert(exec.length === 0);
+    });
+
+    it('should return a value', () => {
+        const toParse = `
+            def a = [1, 2, 3];
+            def b = 0;
+            
+            for (i in a) {
+                b++;
+            }
+
+            for (i in [1, 2, 3]) {
+                b++;
+            }
+
+            for (i in 0..19) {
+                b++;
+            }
+
+            return b;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec === 3 + 3 + 20);
+    });
+
+    it('should return a value', () => {
+        const toParse = `
+            def a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+            a = a - 1 - (3 - 2);
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec.length === 9);
+    });
+
+    it('should return a value', () => {
+        const toParse = `
+            def a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+            a = a - 1 - (3 - 2) - (4 - 3) - (5 - 4);
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec.length === 9);
+    });
+
+    it('should return a value', () => {
+        const toParse = `
+            def a = [1, 2, 3] - 1 - (3 - 2);
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec.length === 2);
+    });
+
+    it('should return a value', () => {
+        const toParse = `
+            def a = 1 - 1 - (3 - 2);
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec === -1);
+    });
+
+    it('should return a value', () => {
+        const toParse = `
+            def a = [1, 2, 3];
+            return a + 1;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec.length === 4);
     });
 });

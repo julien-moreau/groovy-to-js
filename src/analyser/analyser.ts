@@ -4,6 +4,8 @@ import { TokenType } from '../tokenizer/token-type';
 import Scope from './scope';
 import Variable, { VariableType } from './scope-variable';
 
+import operators from './operator';
+
 export default class Analyser {
     // Public members
     public tokenizer: Tokenizer;
@@ -54,6 +56,8 @@ export default class Analyser {
             } else if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
                 const newScope = new Scope(scope);
                 str += '{\n' + this.parse(newScope);
+            } else if (this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
+                return str + '}\n';
             } else {
                 str += this.expression(scope);
             }
@@ -68,16 +72,19 @@ export default class Analyser {
     protected expression (scope: Scope, name?: string): string {
         let str = '';
         let identifier = '';
+        let number = '';
 
         if ((identifier = <string> this.tokenizer.matchIdentifier())) {
             // Operation on variables ?
             let operator = '';
             let operatorAssign = '';
 
+            // Operator
             if ((operator = this.tokenizer.matchOperator()) || (operatorAssign = this.tokenizer.matchOperatorAssign())) {
                 // Left variable
                 const left = Variable.find(scope, v => v.name === identifier);
                 let right = '';
+                let operatorName = operator || operatorAssign;
 
                 if ((right = this.tokenizer.matchNumber())) {
                     // a - 1 for example
@@ -86,22 +93,22 @@ export default class Analyser {
                     
                     let newOperator = '';
                     if ((newOperator = this.tokenizer.matchOperator())) {
-                        let rec = `subtract(subtract(${left.name}, ${right}), ${this.expression(scope)})`;
+                        let recursive = `${operators[operatorName]}(${operators[newOperator]}(${left.name}, ${right}), ${this.expression(scope, name)})`;
+
                         while ((newOperator = this.tokenizer.matchOperator())) {
-                            rec = `subtract(${rec}, ${this.expression(scope)})`;
-                            newOperator = this.tokenizer.matchOperator();
+                            recursive = `${operators[operatorName]}(${recursive}, ${this.expression(scope, name)})`;
                         }
 
-                        str += rec;
+                        str += recursive;
                     } else if (left.type === VariableType.NUMBER) {
                         str += identifier + ' ' + (operator || operatorAssign) + ' ' + right;
                     } else if (left.type === VariableType.ARRAY) {
-                        str += `subtract(${left.name}, ${right})`;
+                        str += `${operators[operatorName]}(${left.name}, ${right})`;
                     }
                 } else if ((right = <string> this.tokenizer.matchIdentifier())) {
                     // a - b for example
                     if (left.type === VariableType.ARRAY) {
-                        str += `subtract(${left.name}, ${right})`;
+                        str += `${operators[operatorName]}(${left.name}, ${right})`;
 
                         if (name)
                             Variable.find(scope, v => v.name === name).type = VariableType.ARRAY;
@@ -115,18 +122,18 @@ export default class Analyser {
                     // a - [1] for example
                     if (left.type === VariableType.ARRAY) {
                         const array = this.array(scope);
-                        str += `subtract(${left.name}, ${array.str})`;
+                        str += `${operators[operatorName]}(${left.name}, ${array.str})`;
                     }
                 } else if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
                     // Recursively subtract/add/etc.
-                    str += `subtract(${left.name}, ${this.expression(scope)}`;
+                    str += `${operators[operatorName]}(${left.name}, ${this.expression(scope)}`;
                 } else {
                     // Operator assign
                     str += identifier + ' ' + (operator || operatorAssign);
                 }
             } else if (this.tokenizer.match(TokenType.ASSIGN)) {
                 // Assignation
-                str += identifier + ' = ' + this.expression(scope);
+                str += identifier + ' = ' + this.expression(scope, name);
             } else {
                 str += identifier;
             }
@@ -134,6 +141,13 @@ export default class Analyser {
             // Array
             const array = this.array(scope);
             str += array.str;
+        } else if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
+            str += '(';
+            while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
+                str += this.expression(scope, name);
+            }
+
+            str += ')';
         } else {
             str += this.tokenizer.lastString;
             this.tokenizer.getNextToken();
@@ -240,6 +254,8 @@ export default class Analyser {
         // A def ?
         if (this.tokenizer.matchIdentifier('def')) {
             result.str += 'var ';
+        } else {
+            result.str += 'var ';
         }
 
         // Variable
@@ -294,8 +310,18 @@ export default class Analyser {
             result.variable.type = VariableType.NUMBER;
         } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
             const array = this.array(scope, name);
-            result.str += array.str;
             result.variable.type = array.type;
+
+            let operator = '';
+            if ((operator = this.tokenizer.matchOperator())) {
+                array.str = `${operators[operator]}(${array.str}, ${this.expression(scope, name)})`;
+            }
+
+            while ((operator = this.tokenizer.matchOperator())) {
+                array.str = `${operators[operator]}(${array.str}, ${this.expression(scope, name)})`;
+            }
+            
+            result.str += array.str;
         } else {
             result.str += this.expression(scope, name);
         }

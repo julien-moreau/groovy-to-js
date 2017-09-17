@@ -311,6 +311,7 @@ export default class Tokenizer {
             throw new Error('Invalid Groovy Script');
         }
 
+        //console.log(this.lastString);
         return this.currentToken;
     }
 }
