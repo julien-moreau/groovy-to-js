@@ -181,6 +181,16 @@ describe('A Tokenizer', () => {
     it('should check operators and replace by functions when needed', () => {
         const str = `
             def a = [1, 2, 3];
+            a = a - (a - 1 - 2);`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];a = subtract(a, subtract(subtract(a, 1), 2));`);
+    });
+
+    it('should check operators and replace by functions when needed', () => {
+        const str = `
+            def a = [1, 2, 3];
             def b = [1, 2, 3];
             def c = a - b;`;
 

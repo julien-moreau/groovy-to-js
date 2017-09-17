@@ -49,6 +49,8 @@ export default class Analyser {
                 str += 'while ' + this.expression(scope);
             } else if (this.tokenizer.matchIdentifier('if')) {
                 str += 'if ' + this.expression(scope);
+            } else if (this.tokenizer.matchIdentifier('return')) {
+                str += 'return ' + this.expression(scope);
             } else if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
                 const newScope = new Scope(scope);
                 str += '{\n' + this.parse(newScope);
@@ -82,7 +84,16 @@ export default class Analyser {
                     if (name)
                         Variable.find(scope, v => v.name === name).type = VariableType.NUMBER;
                     
-                    if (left.type === VariableType.NUMBER) {
+                    let newOperator = '';
+                    if ((newOperator = this.tokenizer.matchOperator())) {
+                        let rec = `subtract(subtract(${left.name}, ${right}), ${this.expression(scope)})`;
+                        while ((newOperator = this.tokenizer.matchOperator())) {
+                            rec = `subtract(${rec}, ${this.expression(scope)})`;
+                            newOperator = this.tokenizer.matchOperator();
+                        }
+
+                        str += rec;
+                    } else if (left.type === VariableType.NUMBER) {
                         str += identifier + ' ' + (operator || operatorAssign) + ' ' + right;
                     } else if (left.type === VariableType.ARRAY) {
                         str += `subtract(${left.name}, ${right})`;
@@ -116,6 +127,8 @@ export default class Analyser {
             } else if (this.tokenizer.match(TokenType.ASSIGN)) {
                 // Assignation
                 str += identifier + ' = ' + this.expression(scope);
+            } else {
+                str += identifier;
             }
         } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
             // Array
