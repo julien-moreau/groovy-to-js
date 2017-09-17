@@ -133,6 +133,45 @@ export default class Tokenizer {
     }
 
     /**
+     * Matches if the current token is an operator (+.-./.*.<.>)
+     */
+    public matchOperator(): string {
+        if (this.currentToken === TokenType.OPERATOR) {
+            const operator = this.currentOperator;
+            this.getNextToken();
+            return operator;
+        }
+
+        return null;
+    }
+
+    /**
+     * Matches if the current token is an operator assign (++.--.+=.-=.etc.)
+     */
+    public matchOperatorAssign(): string {
+        if (this.currentToken === TokenType.OPERATOR_ASSIGN) {
+            const operator = this.currentOperator;
+            this.getNextToken();
+            return operator;
+        }
+
+        return null;
+    }
+
+    /**
+     * Matches if the current token is an accessor (x.something) -> x
+     */
+    public matchRange(): string {
+        if (this.currentToken === TokenType.RANGE) {
+            const range = this.currentRange;
+            this.getNextToken();
+            return range;
+        }
+
+        return null;
+    }
+
+    /**
      * Returns the next token in the string to parse
      */
     public getNextToken (): TokenType {

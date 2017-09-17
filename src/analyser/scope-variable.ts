@@ -1,11 +1,18 @@
-import Scope, { ScopeElementType } from './scope';
+import Scope from './scope';
 
-export default class Variable extends Scope {
+export enum VariableType {
+    ANY = 0,
+    NUMBER,
+    ARRAY,
+    MAP,
+    STRING,
+    FUNCTION
+}
+
+export default class Variable {
     // Public members
     public name: string;
-    public type: ScopeElementType;
-
-    public value: string;
+    public type: VariableType;
 
     /**
      * Constructor
@@ -13,11 +20,24 @@ export default class Variable extends Scope {
      * @param type The variable type
      * @param value The variable's value
      */
-    constructor (parent: Scope, name: string, type: ScopeElementType, value: string = null) {
-        super(parent);
-        
+    constructor (scope: Scope, name: string, type: VariableType) {
         this.name = name;
-        this.value = value;
         this.type = type;
+
+        scope.variables.push(this);
+    }
+
+    public static find (scope: Scope, predicate: (variable: Variable) => boolean): Variable {
+        let parent = scope;
+        while (parent) {
+            for (const v of parent.variables) {
+                if (predicate(v))
+                    return v;
+            }
+
+            parent = scope.parent;
+        }
+
+        return null;
     }
 }
