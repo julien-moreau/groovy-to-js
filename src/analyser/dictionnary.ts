@@ -3,4 +3,6 @@ const operators = {
     '+': 'add'
 }
 
-export default operators;
+export {
+    operators
+}

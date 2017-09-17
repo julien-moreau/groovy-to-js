@@ -4,7 +4,7 @@ import { TokenType } from '../tokenizer/token-type';
 import Scope from './scope';
 import Variable, { VariableType } from './scope-variable';
 
-import operators from './operator';
+import { operators } from './dictionnary';
 
 export default class Analyser {
     // Public members
@@ -305,9 +305,47 @@ export default class Analyser {
 
         // Value
         let number = '';
+        let range = '';
+
+        let parenthesised = this.tokenizer.match(TokenType.PARENTHESIS_OPEN);
+
         if ((number = this.tokenizer.matchNumber())) {
+            // Number
             result.str += number;
             result.variable.type = VariableType.NUMBER;
+        } else if ((range = this.tokenizer.matchRange())) {
+            // Range
+            let rangeResult = '';
+            result.variable.type = VariableType.ARRAY;
+
+            const split = range.split('..');
+            let end = parseInt(split[1]);
+
+            // 0..19 + 1 -> 0..20;
+            // (0..19) + 1 -> [0, ..., 19] + 1 -> [0, ..., 20];
+            if (parenthesised && !this.tokenizer.match(TokenType.PARENTHESIS_CLOSE))
+                throw new Error('A range must be parenthetized once a parenthesis opened');
+
+            let operator = '';
+            if ((operator = this.tokenizer.matchOperator())) {
+                if (parenthesised) {
+                    rangeResult = `${operators[operator]}(range(${split[0]}, ${split[1]}), ${this.expression(scope, name)})`;
+
+                    while ((operator = this.tokenizer.matchOperator())) {
+                        rangeResult = `${operators[operator]}(${rangeResult}, ${this.expression(scope, name)})`;
+                    }
+                } else {
+                    let expr = this.expression(scope, name);
+                    while ((operator = this.tokenizer.matchOperator())) {
+                        expr += operator + ' ' + this.expression(scope, name);
+                    }
+                    rangeResult = `range(${split[0]}, ${end} + ${expr})`;
+                }
+            } else {
+                rangeResult = `range(${split[0]}, ${split[1]})`;
+            }
+
+            result.str += rangeResult;
         } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
             const array = this.array(scope, name);
             result.variable.type = array.type;

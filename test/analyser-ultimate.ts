@@ -191,4 +191,40 @@ var add = function (a, b) {
 
         assert(exec.length === 4);
     });
+
+    it('should return a value', () => {
+        const toParse = `
+            def a = 0..19;
+            return a + 1;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec.length === 21);
+    });
+
+    it('should return a value', () => {
+        const toParse = `
+            def a = 0..19 + 1 + 1;
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec.length === 22);
+    });
+
+    it('should return a value', () => {
+        const toParse = `
+            def a = (0..19) + 1 + 1;
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec.length === 22);
+    });
 });
