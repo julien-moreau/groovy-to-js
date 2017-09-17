@@ -38,6 +38,9 @@ export default class Variable {
             parent = scope.parent;
         }
 
-        return null;
+        return {
+            name: '',
+            type: VariableType.ANY
+        };
     }
 }

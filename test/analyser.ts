@@ -17,7 +17,7 @@ describe('A Tokenizer', () => {
 
         const result = analyser.parse();
 
-        assert(result === 'var myvar = 0;');
+        assertResult(result, 'var myvar = 0;');
         assert(analyser.scope.variables.length === 1);
         assert(analyser.scope.variables[0].name === 'myvar');
         assert(analyser.scope.variables[0].type === VariableType.NUMBER);
@@ -47,7 +47,7 @@ describe('A Tokenizer', () => {
 
         const result = analyser.parse();
 
-        assert(result === 'var myvar = [1,2,3];');
+        assertResult(result, 'var myvar = [1,2,3];');
         assert(analyser.scope.variables.length === 1);
         assert(analyser.scope.variables[0].name === 'myvar');
         assert(analyser.scope.variables[0].type === VariableType.ARRAY);
@@ -59,7 +59,7 @@ describe('A Tokenizer', () => {
 
         const result = analyser.parse();
 
-        assert(result === 'var myvar = { a: 0,b:0,c:[1,2,3] };');
+        assertResult(result, 'var myvar = { a: 0,b:0,c:[1,2,3] };');
 
         assert(analyser.scope.variables.length === 4);
 
@@ -146,5 +146,109 @@ describe('A Tokenizer', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = 0;for (var i in { a: 0,b:0 }){a ++;}`);
+    });
+
+    it('should check operators and replace by function when needed', () => {
+        const str = `
+            def a = [1, 2, 3];
+            a = a - 1;`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];a = subtract(a, 1);`);
+    });
+
+    it('should check operators and replace by function when needed', () => {
+        const str = `
+            def a = [1, 2, 3];
+            a = a - [1];`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];a = subtract(a, [1]);`);
+    });
+
+    it('should check operators and replace by functions when needed', () => {
+        const str = `
+            def a = [1, 2, 3];
+            a = a - (a - 1);`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];a = subtract(a, subtract(a, 1));`);
+    });
+
+    it('should check operators and replace by functions when needed', () => {
+        const str = `
+            def a = [1, 2, 3];
+            def b = [1, 2, 3];
+            def c = a - b;`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];var b = [1,2,3];var c = subtract(a, b);`);
+
+        assert(analyser.scope.variables[2].name === 'c');
+        assert(analyser.scope.variables[2].type === VariableType.ARRAY);
+    });
+
+    it('should parse a while loop', () => {
+        const str = `
+            def a = 0;
+            while (a < 10) {
+                a++;
+            }`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = 0;while (a < 10){a ++;}`);
+    });
+
+    it('should parse a if block', () => {
+        const str = `
+            def a = 0;
+            if (a < 10) {
+                a++;
+            }`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = 0;if (a < 10){a ++;}`);
+    });
+
+    it('should parse a if with operators', () => {
+        const str = `
+            def a = 0;
+            if (a - 1) {
+                a++;
+            }`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = 0;if (a - 1){a ++;}`);
+    });
+
+    it('should parse a if with operators', () => {
+        const str = `
+            def a = [1, 2, 3];
+            if (a - 1) {
+                a++;
+            }`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];if (subtract(a, 1)){a ++;}`);
+    });
+
+    it('should parse a if with operators', () => {
+        const str = `
+            def a = [1, 2, 3];
+            if (a - (a - 2)) {
+                a++;
+            }`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];if (subtract(a, subtract(a, 2))){a ++;}`);
     });
 });

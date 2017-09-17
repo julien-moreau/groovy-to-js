@@ -38,19 +38,22 @@ export default class Analyser {
             str += '\t';
 
         // Tokenize
-        while (!this.tokenizer.isEnd()) {
+        while (this.tokenizer.currentToken !== TokenType.END_OF_INPUT) {
             if (this.tokenizer.matchIdentifier('def')) {
                 const variable = this.variable(scope);
                 str += 'var ' + variable.str;
             } else if (this.tokenizer.matchIdentifier('for')) {
                 const loop = this.for(scope);
                 str += 'for ' + loop.str;
+            } else if (this.tokenizer.matchIdentifier('while')) {
+                str += 'while ' + this.expression(scope);
+            } else if (this.tokenizer.matchIdentifier('if')) {
+                str += 'if ' + this.expression(scope);
             } else if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
                 const newScope = new Scope(scope);
                 str += '{\n' + this.parse(newScope);
             } else {
                 str += this.expression(scope);
-                this.tokenizer.getNextToken();
             }
         }
 
@@ -60,7 +63,7 @@ export default class Analyser {
     /**
      * Parses an expression
      */
-    protected expression (scope: Scope): string {
+    protected expression (scope: Scope, name?: string): string {
         let str = '';
         let identifier = '';
 
@@ -70,31 +73,60 @@ export default class Analyser {
             let operatorAssign = '';
 
             if ((operator = this.tokenizer.matchOperator()) || (operatorAssign = this.tokenizer.matchOperatorAssign())) {
-                const left = Variable.find(scope, v => v.name === identifier); // Left variable
+                // Left variable
+                const left = Variable.find(scope, v => v.name === identifier);
+                let right = '';
 
-                let number = '';
-                if ((number = this.tokenizer.matchNumber())) {
-                    // Numbers and numbers are supported
+                if ((right = this.tokenizer.matchNumber())) {
+                    // a - 1 for example
+                    if (name)
+                        Variable.find(scope, v => v.name === name).type = VariableType.NUMBER;
+                    
                     if (left.type === VariableType.NUMBER) {
-                        str += identifier + ' ' + (operator || operatorAssign) + ' ' + number;
+                        str += identifier + ' ' + (operator || operatorAssign) + ' ' + right;
                     } else if (left.type === VariableType.ARRAY) {
-                        debugger;
-                        str += '';
+                        str += `subtract(${left.name}, ${right})`;
+                    }
+                } else if ((right = <string> this.tokenizer.matchIdentifier())) {
+                    // a - b for example
+                    if (left.type === VariableType.ARRAY) {
+                        str += `subtract(${left.name}, ${right})`;
+
+                        if (name)
+                            Variable.find(scope, v => v.name === name).type = VariableType.ARRAY;
+                    } else {
+                        str += identifier + ' ' + (operator || operatorAssign) + ' ' + right;
+
+                        if (name)
+                            Variable.find(scope, v => v.name === name).type = Variable.find(scope, v => v.name === right).type;
                     }
                 } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
-                    debugger;
+                    // a - [1] for example
+                    if (left.type === VariableType.ARRAY) {
+                        const array = this.array(scope);
+                        str += `subtract(${left.name}, ${array.str})`;
+                    }
+                } else if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
+                    // Recursively subtract/add/etc.
+                    str += `subtract(${left.name}, ${this.expression(scope)}`;
                 } else {
                     // Operator assign
                     str += identifier + ' ' + (operator || operatorAssign);
                 }
+            } else if (this.tokenizer.match(TokenType.ASSIGN)) {
+                // Assignation
+                str += identifier + ' = ' + this.expression(scope);
             }
         } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
             // Array
             const array = this.array(scope);
             str += array.str;
+        } else {
+            str += this.tokenizer.lastString;
+            this.tokenizer.getNextToken();
         }
-
-        return str + this.tokenizer.lastString;
+        
+        return str;
     }
 
     /**
@@ -251,7 +283,13 @@ export default class Analyser {
             const array = this.array(scope, name);
             result.str += array.str;
             result.variable.type = array.type;
+        } else {
+            result.str += this.expression(scope, name);
         }
+
+        // End instruction
+        if (this.tokenizer.match(TokenType.INSTRUCTION_END))
+            result.str += ';';
 
         return result;
     }
