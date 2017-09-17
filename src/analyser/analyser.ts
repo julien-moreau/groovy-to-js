@@ -28,6 +28,8 @@ export default class Analyser {
 
         // Start with an empty string
         let str = '';
+
+        // Temporary variables from tokenizer
         let identifier = '';
         let accessor = '';
 
@@ -42,21 +44,28 @@ export default class Analyser {
         // Tokenize
         while (this.tokenizer.currentToken !== TokenType.END_OF_INPUT) {
             if (this.tokenizer.matchIdentifier('def')) {
+                // Variable definition
                 const variable = this.variable(scope);
                 str += 'var ' + variable.str;
             } else if (this.tokenizer.matchIdentifier('for')) {
+                // A for loop
                 const loop = this.for(scope);
                 str += 'for ' + loop.str;
             } else if (this.tokenizer.matchIdentifier('while')) {
+                // A while loop
                 str += 'while ' + this.expression(scope);
             } else if (this.tokenizer.matchIdentifier('if')) {
+                // A Condition
                 str += 'if ' + this.expression(scope);
             } else if (this.tokenizer.matchIdentifier('return')) {
+                // Return statement
                 str += 'return ' + this.expression(scope);
             } else if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
+                // A new code block, then create a new scope
                 const newScope = new Scope(scope);
                 str += '{\n' + this.parse(newScope);
             } else if (this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
+                // Closing code block
                 return str + '}\n';
             } else {
                 str += this.expression(scope);
@@ -74,7 +83,7 @@ export default class Analyser {
         let identifier = '';
         let number = '';
 
-        if ((identifier = <string> this.tokenizer.matchIdentifier())) {
+        if ((identifier = <string> this.tokenizer.matchIdentifier()) || (identifier = this.tokenizer.matchAccessor())) {
             // Operation on variables ?
             let operator = '';
             let operatorAssign = '';
@@ -131,6 +140,7 @@ export default class Analyser {
                     // Operator assign
                     str += identifier + ' ' + (operator || operatorAssign);
                 }
+            // Assign (=)
             } else if (this.tokenizer.match(TokenType.ASSIGN)) {
                 // Assignation
                 str += identifier + ' = ' + this.expression(scope, name);
@@ -138,10 +148,11 @@ export default class Analyser {
                 str += identifier;
             }
         } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
-            // Array
+            // Expressing an array
             const array = this.array(scope);
             str += array.str;
         } else if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
+            // Expression
             str += '(';
             while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
                 str += this.expression(scope, name);
@@ -149,6 +160,7 @@ export default class Analyser {
 
             str += ')';
         } else {
+            // Just keep
             str += this.tokenizer.lastString;
             this.tokenizer.getNextToken();
         }
