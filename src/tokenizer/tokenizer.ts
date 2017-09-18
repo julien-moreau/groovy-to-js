@@ -12,7 +12,8 @@ export default class Tokenizer {
     public currentRange: string = '';
     public currentAccessor: string = '';
 
-    public lastString = '';
+    public lastString: string = '';
+    public currentLine: number = 1;
 
     // Private members
     private pos: number;
@@ -66,7 +67,7 @@ export default class Tokenizer {
      * @param token the token to match
      */
     public match(token: TokenType): boolean {
-        if (this.currentToken == token) {
+        if (this.currentToken === token) {
             this.getNextToken();
             return true;
         }
@@ -87,7 +88,7 @@ export default class Tokenizer {
             return false;
         }
 
-        if (this.currentToken == TokenType.IDENTIFIER) {
+        if (this.currentToken === TokenType.IDENTIFIER) {
             const identifier = this.currentIdentifier;
             this.getNextToken();
             return identifier;
@@ -195,10 +196,10 @@ export default class Tokenizer {
             case ',': return this.currentToken = TokenType.COMMA;
             case '{': return this.currentToken = TokenType.BRACKET_OPEN;
             case '}': return this.currentToken = TokenType.BRACKET_CLOSE;
-            case '\n': return this.currentToken = TokenType.LINE_END;
+            case '\n': this.currentLine++; return this.currentToken = TokenType.LINE_END;
             case ':': return this.currentToken = TokenType.DESCRIPTOR;
             default: {
-                // Number
+                // Number or range
                 if (this.isDigit.test(c)) {
                     this.currentToken = TokenType.NUMBER;
                     this.currentNumber = c;
@@ -308,7 +309,7 @@ export default class Tokenizer {
         }
 
         if (this.currentToken === TokenType.ERROR) {
-            throw new Error('Invalid Groovy Script');
+            throw new Error('Invalid Groovy Script at line ' + this.currentLine);
         }
 
         //console.log(this.lastString);

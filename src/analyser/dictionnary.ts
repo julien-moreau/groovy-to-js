@@ -1,8 +1,13 @@
 const operators = {
     '-': 'subtract',
     '+': 'add'
-}
+};
+
+const keywords = {
+    'def': 'var'
+};
 
 export {
-    operators
+    operators,
+    keywords
 }

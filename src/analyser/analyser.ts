@@ -4,7 +4,7 @@ import { TokenType } from '../tokenizer/token-type';
 import Scope from './scope';
 import Variable, { VariableType } from './scope-variable';
 
-import { operators } from './dictionnary';
+import { operators, keywords } from './dictionnary';
 
 export default class Analyser {
     // Public members
@@ -43,32 +43,20 @@ export default class Analyser {
 
         // Tokenize
         while (this.tokenizer.currentToken !== TokenType.END_OF_INPUT) {
-            if (this.tokenizer.matchIdentifier('def')) {
-                // Variable definition
-                const variable = this.variable(scope);
-                str += 'var ' + variable.str;
-            } else if (this.tokenizer.matchIdentifier('for')) {
-                // A for loop
-                const loop = this.for(scope);
-                str += 'for ' + loop.str;
-            } else if (this.tokenizer.matchIdentifier('while')) {
-                // A while loop
-                str += 'while ' + this.expression(scope);
-            } else if (this.tokenizer.matchIdentifier('if')) {
-                // A Condition
-                str += 'if ' + this.expression(scope);
-            } else if (this.tokenizer.matchIdentifier('return')) {
-                // Return statement
-                str += 'return ' + this.expression(scope);
-            } else if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
-                // A new code block, then create a new scope
+            // Block of code
+            if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
                 const newScope = new Scope(scope);
-                str += '{\n' + this.parse(newScope);
-            } else if (this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
-                // Closing code block
-                return str + '}\n';
-            } else {
-                str += this.expression(scope);
+                str += `{\n ${this.parse(newScope)} \n`;
+            }
+            // For loop
+            else if (this.tokenizer.matchIdentifier('for')) {
+                const newScope = new Scope(scope);
+                str += `for ${this.for(newScope)}`;
+                str += `{\n ${this.parse(newScope)} \n`;
+            }
+            // Other
+            else {
+                str += `${this.expression(scope).str} `;
             }
         }
 
@@ -77,94 +65,268 @@ export default class Analyser {
 
     /**
      * Parses an expression
+     * @param scope the scope of the expression
+     * @param name 
      */
-    protected expression (scope: Scope, name?: string): string {
-        let str = '';
+    protected expression (scope: Scope, name?: string): { str: string, variable: Variable } {
+        const result = {
+            str: '',
+            variable: null
+        };
+        
         let identifier = '';
-        let number = '';
+        let range = '';
 
-        if ((identifier = <string> this.tokenizer.matchIdentifier()) || (identifier = this.tokenizer.matchAccessor())) {
-            // Operation on variables ?
-            let operator = '';
-            let operatorAssign = '';
+        // Identifier
+        if ((identifier = <string> this.tokenizer.matchIdentifier())) {
+            // Check keyword
+            if (keywords[identifier])
+                identifier = keywords[identifier];
 
-            // Operator
-            if ((operator = this.tokenizer.matchOperator()) || (operatorAssign = this.tokenizer.matchOperatorAssign())) {
-                // Left variable
-                const left = Variable.find(scope, v => v.name === identifier);
-                let right = '';
-                let operatorName = operator || operatorAssign;
+            result.str += identifier;
+            result.variable = Variable.find(scope, v => v.name === identifier);
 
-                if ((right = this.tokenizer.matchNumber())) {
-                    // a - 1 for example
-                    if (name)
-                        Variable.find(scope, v => v.name === name).type = VariableType.NUMBER;
-                    
-                    let newOperator = '';
-                    if ((newOperator = this.tokenizer.matchOperator())) {
-                        let recursive = `${operators[operatorName]}(${operators[newOperator]}(${left.name}, ${right}), ${this.expression(scope, name)})`;
+            // If variable definition
+            let variableName = '';
 
-                        while ((newOperator = this.tokenizer.matchOperator())) {
-                            recursive = `${operators[operatorName]}(${recursive}, ${this.expression(scope, name)})`;
+            if (identifier === 'var' && (variableName = <string> this.tokenizer.matchIdentifier())) {
+                result.str += ` ${variableName} `;
+                const variable = new Variable(scope, variableName, VariableType.ANY);
+
+                if (this.tokenizer.match(TokenType.ASSIGN)) {
+                    // Check type
+                    let number = '';
+                    let range = '';
+
+                    // Number ?
+                    if ((number = this.tokenizer.matchNumber())) {
+                        variable.type = VariableType.NUMBER;
+                        result.str += `= ${number}`;
+                    }
+                    // Array ?
+                    else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
+                        const array = this.array(scope, variableName);
+                        variable.type = array.type;
+                        
+                        const left = new Variable(scope, array.str, VariableType.ARRAY);
+                        result.str += `= ${this.operators(scope, left)}`;
+                    }
+                    // Idenfifier ?
+                    else if ((identifier = <string> this.tokenizer.matchIdentifier()) || (identifier = this.tokenizer.matchAccessor())) {
+                        const left = Variable.find(scope, v => v.name === identifier);
+                        variable.type = left.type;
+
+                        const operators = this.operators(scope, left);
+                        if (operators === identifier) {
+                            result.str += `= ${identifier}`;
+                        } else {
+                            result.str += `= ${operators}`;
                         }
-
-                        str += recursive;
-                    } else if (left.type === VariableType.NUMBER) {
-                        str += identifier + ' ' + (operator || operatorAssign) + ' ' + right;
-                    } else if (left.type === VariableType.ARRAY) {
-                        str += `${operators[operatorName]}(${left.name}, ${right})`;
                     }
-                } else if ((right = <string> this.tokenizer.matchIdentifier())) {
-                    // a - b for example
-                    if (left.type === VariableType.ARRAY) {
-                        str += `${operators[operatorName]}(${left.name}, ${right})`;
-
-                        if (name)
-                            Variable.find(scope, v => v.name === name).type = VariableType.ARRAY;
-                    } else {
-                        str += identifier + ' ' + (operator || operatorAssign) + ' ' + right;
-
-                        if (name)
-                            Variable.find(scope, v => v.name === name).type = Variable.find(scope, v => v.name === right).type;
+                    // Range ?
+                    else if ((range = this.tokenizer.matchRange())) {
+                        result.str += `= ${this.range(scope, range)}`;
+                        variable.type = VariableType.ARRAY;
                     }
-                } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
-                    // a - [1] for example
-                    if (left.type === VariableType.ARRAY) {
-                        const array = this.array(scope);
-                        str += `${operators[operatorName]}(${left.name}, ${array.str})`;
+                    // Expression (expression) ?
+                    else {
+                        const expr = this.expression(scope, name);
+                        result.str += `= ${expr.str}`;
                     }
-                } else if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
-                    // Recursively subtract/add/etc.
-                    str += `${operators[operatorName]}(${left.name}, ${this.expression(scope)}`;
-                } else {
-                    // Operator assign
-                    str += identifier + ' ' + (operator || operatorAssign);
                 }
-            // Assign (=)
-            } else if (this.tokenizer.match(TokenType.ASSIGN)) {
-                // Assignation
-                str += identifier + ' = ' + this.expression(scope, name);
-            } else {
-                str += identifier;
+
+                if (this.tokenizer.match(TokenType.INSTRUCTION_END)) {
+                    result.str += ';';
+                }
             }
-        } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
-            // Expressing an array
-            const array = this.array(scope);
-            str += array.str;
-        } else if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
-            // Expression
-            str += '(';
+            // Assign expression ?
+            else if (this.tokenizer.match(TokenType.ASSIGN)) {
+                result.str += ' = ';
+                
+                if ((identifier = <string> this.tokenizer.matchIdentifier())) {
+                    // Maybe an array
+                    const left = Variable.find(scope, v => v.name === identifier);
+                    result.str += this.operators(scope, left);
+                } else {
+                    // Supported natively by JavaScript
+                    result.str += this.tokenizer.lastString;
+                    this.tokenizer.getNextToken();
+                }
+            }
+            // Identifier ?
+            else if ((identifier = <string> this.tokenizer.matchIdentifier())) {
+                const left = Variable.find(scope, v => v.name === identifier);
+                result.str += ` ${this.operators(scope, left)}`;
+            }
+        }
+        // Array ?
+        else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
+            const array = this.array(scope, name);
+            result.str += array.str;
+        }
+        // Range ?
+        else if ((range = this.tokenizer.matchRange())) {
+            const rangeStr = this.range(scope, range);
+
+            result.variable = new Variable(scope, rangeStr, VariableType.ARRAY);
+            result.str += rangeStr;
+        }
+        // Parenthesis open: (expression) ?
+        else if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
+            let exprStr = '(';
+            let hasArray = false;
+
             while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
-                str += this.expression(scope, name);
+                const expr = this.expression(scope, name);
+                if (expr.variable) {
+                    exprStr += this.operators(scope, expr.variable);
+                    hasArray = true;
+                }
+                else
+                    exprStr+= expr.str;
             }
 
-            str += ')';
+            exprStr+= ')';
+
+            if (hasArray) {
+                const left = new Variable(scope, exprStr, VariableType.ARRAY);
+                exprStr = this.operators(scope, left);
+            }
+            result.str += exprStr;
         } else {
-            // Just keep
-            str += this.tokenizer.lastString;
+            result.str += this.tokenizer.lastString;
             this.tokenizer.getNextToken();
         }
+
+        return result;
+    }
+
+    /**
+     * Parses a for loop
+     * @param scope: the new scope created by the loop
+     */
+    protected for (scope: Scope): string {
+        if (!this.tokenizer.match(TokenType.PARENTHESIS_OPEN))
+            throw new Error('A for keyword must be followed by an opened parenthesis');
+
+        let str = '(';
+
+        if (!this.tokenizer.matchIdentifier('def')) {
+            str += 'var ';
+        } else {
+            str += 'var ';
+        }
+
+        // Variable
+        let identifier = '';
+        if ((identifier = <string> this.tokenizer.matchIdentifier())) {
+            str += identifier;
+
+            const variable = new Variable(scope, identifier, VariableType.ANY);
+
+            // Variable type
+            if (this.tokenizer.match(TokenType.ASSIGN)) {
+                str += ' = ';
+            }
+
+            if (this.tokenizer.matchIdentifier('in')) {
+                str += ' in ';
+            }
+
+            let right = '';
+            // Number ?
+            if ((right = this.tokenizer.matchNumber())) {
+                variable.type = VariableType.NUMBER;
+            }
+            // Range ?
+            else if ((right = this.tokenizer.matchRange())) {
+                variable.type = VariableType.NUMBER;
+                right = this.range(scope, right);
+            }
+            // String ?
+            else if ((right = this.tokenizer.matchString())) {
+                variable.type = VariableType.STRING;
+            }
+            // Array ?
+            else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
+                const array = this.array(scope);
+                right = array.str;
+            }
+            // Identifier
+            else if ((right = <string> this.tokenizer.matchIdentifier())) {
+                const otherVariable = Variable.find(scope, v => v.name === right);
+                if (otherVariable.type === VariableType.ARRAY)
+                    variable.type = VariableType.NUMBER;
+                else
+                    variable.type = VariableType.STRING;
+            }
+
+            str += right;
+        }
+
+        // Instructions in "for"
+        while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
+            str += this.expression(scope).str;
+        }
+
+        return str + ')';
+    }
+
+    /**
+     * Creates a new range
+     * @param scope the scope of the range
+     * @param range the range string
+     */
+    protected range (scope: Scope, range: string): string {
+        let str = '';
+        const split = range.split('..');
+
+        let operator = '';
+        while ((operator = this.tokenizer.matchOperator())) {
+            split[1] += `${operator} ${this.expression(scope).str}`;
+        }
+
+        return `range(${split[0]}, ${split[1]})`
+    }
+
+    /**
+     * Checks operations on arrays
+     * @param scope the scope of operations
+     * @param left the left variable
+     */
+    protected operators (scope: Scope, left: Variable): string {
+        if (!left || left.type !== VariableType.ARRAY)
+            return left.name;
         
+        let str = left.name;
+
+        let operator = '';
+        let right = '';
+
+        let identifier = '';
+
+        while ((operator = this.tokenizer.matchOperator())) {
+            const fn = operators[operator];
+
+            // Number
+            if ((right = this.tokenizer.matchNumber())) {
+                str = `${fn}(${str}, ${right})`;
+            }
+            // Array
+            else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
+                const array = this.array(scope);
+                str = `${fn}(${str}, ${array.str})`;
+            }
+            // Identifier
+            else if ((right = <string> this.tokenizer.matchIdentifier())) {
+                str = `${fn}(${str}, ${right})`;
+            }
+            // Expression
+            else {
+                str = `${fn}(${str}, ${this.expression(scope).str})`;
+            }
+        }
+
         return str;
     }
 
@@ -248,139 +410,6 @@ export default class Analyser {
         }
 
         return str + ' }';
-    }
-
-    /**
-     * Parses a for loop
-     * @param scope the scope which will contain the for loop variable
-     */
-    protected for (scope: Scope): { str: string, variable: Variable } {
-        if (!this.tokenizer.match(TokenType.PARENTHESIS_OPEN))
-            throw new Error('A for loop must be followed by an opening parenthesis');
-
-        const result = {
-            str: '(',
-            variable: null
-        };
-
-        // A def ?
-        if (this.tokenizer.matchIdentifier('def')) {
-            result.str += 'var ';
-        } else {
-            result.str += 'var ';
-        }
-
-        // Variable
-        const variable = this.variable(scope);
-        result.str += variable.str;
-        result.variable = variable.variable;
-
-        if (this.tokenizer.matchIdentifier('in')) {
-            result.str += ' in ';
-
-            let right = '';
-            if ((right = this.tokenizer.matchRange())) {
-                const range = right.split('..');
-                result.str += `range(${range[0]}, ${range[1]})`;
-            } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
-                // It is an array
-                const array = this.array(scope);
-                result.str += array.str;
-            }
-        }
-
-        // End
-        if (this.tokenizer.match(TokenType.INSTRUCTION_END))
-            result.str += ';';
-
-        return result;
-    }
-
-    /**
-     * Parses a variable definition
-     * @param scope the scope which will contain the variable
-     */
-    protected variable (scope: Scope): { str: string, variable: Variable } {
-        let name = '';
-        if (!(name = <string> this.tokenizer.matchIdentifier()))
-            throw new Error('A variable definition must be followed by an identifier');
-
-        const result = {
-            str: name,
-            variable: new Variable(scope, name, VariableType.ANY)
-        };
-
-        if (!this.tokenizer.match(TokenType.ASSIGN))
-            return result;
-
-        result.str += ' = ';
-
-        // Value
-        let number = '';
-        let range = '';
-
-        let parenthesised = this.tokenizer.match(TokenType.PARENTHESIS_OPEN);
-
-        if ((number = this.tokenizer.matchNumber())) {
-            // Number
-            result.str += number;
-            result.variable.type = VariableType.NUMBER;
-        } else if ((range = this.tokenizer.matchRange())) {
-            // Range
-            let rangeResult = '';
-            result.variable.type = VariableType.ARRAY;
-
-            const split = range.split('..');
-            let end = parseInt(split[1]);
-
-            // 0..19 + 1 -> 0..20;
-            // (0..19) + 1 -> [0, ..., 19] + 1 -> [0, ..., 20];
-            if (parenthesised && !this.tokenizer.match(TokenType.PARENTHESIS_CLOSE))
-                throw new Error('A range must be parenthetized once a parenthesis opened');
-
-            let operator = '';
-            if ((operator = this.tokenizer.matchOperator())) {
-                if (parenthesised) {
-                    rangeResult = `${operators[operator]}(range(${split[0]}, ${split[1]}), ${this.expression(scope, name)})`;
-
-                    while ((operator = this.tokenizer.matchOperator())) {
-                        rangeResult = `${operators[operator]}(${rangeResult}, ${this.expression(scope, name)})`;
-                    }
-                } else {
-                    let expr = this.expression(scope, name);
-                    while ((operator = this.tokenizer.matchOperator())) {
-                        expr += operator + ' ' + this.expression(scope, name);
-                    }
-                    rangeResult = `range(${split[0]}, ${end} + ${expr})`;
-                }
-            } else {
-                rangeResult = `range(${split[0]}, ${split[1]})`;
-            }
-
-            result.str += rangeResult;
-        } else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
-            const array = this.array(scope, name);
-            result.variable.type = array.type;
-
-            let operator = '';
-            if ((operator = this.tokenizer.matchOperator())) {
-                array.str = `${operators[operator]}(${array.str}, ${this.expression(scope, name)})`;
-            }
-
-            while ((operator = this.tokenizer.matchOperator())) {
-                array.str = `${operators[operator]}(${array.str}, ${this.expression(scope, name)})`;
-            }
-            
-            result.str += array.str;
-        } else {
-            result.str += this.expression(scope, name);
-        }
-
-        // End instruction
-        if (this.tokenizer.match(TokenType.INSTRUCTION_END))
-            result.str += ';';
-
-        return result;
     }
 
     /**

@@ -3,10 +3,10 @@ import Analyser from '../src/analyser/analyser';
 
 import * as assert from 'assert';
 
-describe('A Tokenizer', () => {
+describe('A Variable', () => {
     const assertResult = (result: string, expected: string): void => {
-        result = result.replace(/[\n.\t]/g, '');
-        expected = expected.replace(/[\n.\t]/g, '');
+        result = result.replace(/[\n.\t ]/g, '');
+        expected = expected.replace(/[\n.\t ]/g, '');
 
         assert(result === expected);
     };

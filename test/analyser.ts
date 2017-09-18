@@ -5,8 +5,8 @@ import * as assert from 'assert';
 
 describe('A Tokenizer', () => {
     const assertResult = (result: string, expected: string): void => {
-        result = result.replace(/[\n.\t]/g, '');
-        expected = expected.replace(/[\n.\t]/g, '');
+        result = result.replace(/[\n.\t. ]/g, '');
+        expected = expected.replace(/[\n.\t. ]/g, '');
 
         assert(result === expected);
     };
@@ -48,7 +48,7 @@ describe('A Tokenizer', () => {
         const result = analyser.parse();
 
         assertResult(result, 'var myvar = [1,2,3];');
-        assert(analyser.scope.variables.length === 1);
+        assert(analyser.scope.variables.length === 2);
         assert(analyser.scope.variables[0].name === 'myvar');
         assert(analyser.scope.variables[0].type === VariableType.ARRAY);
     });
@@ -61,7 +61,7 @@ describe('A Tokenizer', () => {
 
         assertResult(result, 'var myvar = { a: 0,b:0,c:[1,2,3] };');
 
-        assert(analyser.scope.variables.length === 4);
+        assert(analyser.scope.variables.length === 5);
 
         assert(analyser.scope.variables[0].name === 'myvar');
         assert(analyser.scope.variables[0].type === VariableType.MAP);
@@ -91,7 +91,7 @@ describe('A Tokenizer', () => {
     it('should parse a for loop without a def', () => {
         const str = `
             def a = 0;
-            for (def i = 0; i < 10; i++) {
+            for (i = 0; i < 10; i++) {
                 a++;
             }\n`;
 
@@ -175,7 +175,7 @@ describe('A Tokenizer', () => {
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
-        assertResult(result, `var a = [1,2,3];a = subtract(a, subtract(a, 1));`);
+        assertResult(result, `var a = [1,2,3];a = subtract(a, (subtract(a, 1)));`);
     });
 
     it('should check operators and replace by functions when needed', () => {
@@ -185,7 +185,7 @@ describe('A Tokenizer', () => {
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
-        assertResult(result, `var a = [1,2,3];a = subtract(a, subtract(subtract(a, 1), 2));`);
+        assertResult(result, `var a = [1,2,3];a = subtract(a, (subtract(subtract(a, 1), 2)));`);
     });
 
     it('should check operators and replace by functions when needed', () => {
@@ -198,8 +198,8 @@ describe('A Tokenizer', () => {
         const result = analyser.parse();
         assertResult(result, `var a = [1,2,3];var b = [1,2,3];var c = subtract(a, b);`);
 
-        assert(analyser.scope.variables[2].name === 'c');
-        assert(analyser.scope.variables[2].type === VariableType.ARRAY);
+        assert(analyser.scope.variables[4].name === 'c');
+        assert(analyser.scope.variables[4].type === VariableType.ARRAY);
     });
 
     it('should parse a while loop', () => {
@@ -271,6 +271,6 @@ describe('A Tokenizer', () => {
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
-        assertResult(result, `var a = [1,2,3];if (subtract(a, subtract(a, 2))){a ++;}`);
+        assertResult(result, `var a = [1,2,3];if (subtract(a, (subtract(a, 2)))){a ++;}`);
     });
 });
