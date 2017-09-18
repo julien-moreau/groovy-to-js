@@ -29,10 +29,6 @@ export default class Analyser {
         // Start with an empty string
         let str = '';
 
-        // Temporary variables from tokenizer
-        let identifier = '';
-        let accessor = '';
-
         if (!scope)
             scope = this.scope;
 
@@ -43,7 +39,7 @@ export default class Analyser {
 
         // Tokenize
         while (this.tokenizer.currentToken !== TokenType.END_OF_INPUT) {
-            // Block of code
+            // Code block
             if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
                 const newScope = new Scope(scope);
                 str += `{\n ${this.parse(newScope)} \n`;
@@ -68,7 +64,7 @@ export default class Analyser {
      * @param scope the scope of the expression
      * @param name 
      */
-    protected expression (scope: Scope, name?: string): { str: string, variable: Variable } {
+    protected expression (scope: Scope): { str: string, variable: Variable } {
         const result = {
             str: '',
             variable: null
@@ -77,7 +73,9 @@ export default class Analyser {
         let identifier = '';
         let range = '';
 
-        // Identifier
+        /**
+        // Identifier ?
+        */
         if ((identifier = <string> this.tokenizer.matchIdentifier())) {
             // Check keyword
             if (keywords[identifier])
@@ -86,7 +84,7 @@ export default class Analyser {
             result.str += identifier;
             result.variable = Variable.find(scope, v => v.name === identifier);
 
-            // If variable definition
+            // If variable definition ?
             let variableName = '';
 
             if (identifier === 'var' && (variableName = <string> this.tokenizer.matchIdentifier())) {
@@ -107,7 +105,7 @@ export default class Analyser {
                     else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
                         const array = this.array(scope, variableName);
                         variable.type = array.type;
-                        
+
                         const left = new Variable(scope, array.str, VariableType.ARRAY);
                         result.str += `= ${this.operators(scope, left)}`;
                     }
@@ -130,7 +128,7 @@ export default class Analyser {
                     }
                     // Expression (expression) ?
                     else {
-                        const expr = this.expression(scope, name);
+                        const expr = this.expression(scope);
                         result.str += `= ${expr.str}`;
                     }
                 }
@@ -159,25 +157,31 @@ export default class Analyser {
                 result.str += ` ${this.operators(scope, left)}`;
             }
         }
+        /**
         // Array ?
+        */
         else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
             const array = this.array(scope, name);
             result.str += array.str;
         }
+        /**
         // Range ?
+        */
         else if ((range = this.tokenizer.matchRange())) {
             const rangeStr = this.range(scope, range);
 
             result.variable = new Variable(scope, rangeStr, VariableType.ARRAY);
             result.str += rangeStr;
         }
+        /**
         // Parenthesis open: (expression) ?
+        */
         else if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
             let exprStr = '(';
             let hasArray = false;
 
             while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
-                const expr = this.expression(scope, name);
+                const expr = this.expression(scope);
                 if (expr.variable) {
                     exprStr += this.operators(scope, expr.variable);
                     hasArray = true;
@@ -193,7 +197,11 @@ export default class Analyser {
                 exprStr = this.operators(scope, left);
             }
             result.str += exprStr;
-        } else {
+        }
+        /**
+        // Supported by JavaScript, just add token
+        */
+        else {
             result.str += this.tokenizer.lastString;
             this.tokenizer.getNextToken();
         }
@@ -290,8 +298,8 @@ export default class Analyser {
     }
 
     /**
-     * Checks operations on arrays
-     * @param scope the scope of operations
+     * Checks operations on arrays (or not)
+     * @param scope the scope of operation(s)
      * @param left the left variable
      */
     protected operators (scope: Scope, left: Variable): string {
@@ -339,7 +347,7 @@ export default class Analyser {
         let str = '[';
         let identifier = '';
 
-        while (!this.tokenizer.isEnd() && !this.tokenizer.match(TokenType.ACCESSOR_CLOSE)) {
+        while (!this.tokenizer.match(TokenType.ACCESSOR_CLOSE)) {
             if ((identifier = <string> this.tokenizer.matchIdentifier())) {
                 if (this.tokenizer.match(TokenType.DESCRIPTOR)) {
                     // This is a map, not an array
@@ -370,8 +378,8 @@ export default class Analyser {
     /**
      * Parses a map
      * @param scope the scope to add the map and keys 
-     * @param key the 
-     * @param name 
+     * @param key the current map key parsed by "array()"
+     * @param name the prefix name of the keys
      */
     protected map (scope: Scope, key: string, name?: string): string {
         let str = `{ ${key}: `;
