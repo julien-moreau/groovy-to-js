@@ -3,7 +3,8 @@ const operators = {
     '-=': 'subtract',
     '+': 'add',
     '+=': 'add',
-    '*': 'multiply'
+    '*': 'multiply',
+    '*=': 'multiply'
 };
 
 const keywords = {
@@ -11,6 +12,9 @@ const keywords = {
 };
 
 const functions = {
+    global: {
+        'println': 'console.log'
+    },
     array: {
         'add': 'push'
     },
