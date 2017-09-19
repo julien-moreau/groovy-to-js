@@ -76,6 +76,18 @@ describe('A Tokenizer', () => {
         assert(analyser.scope.variables[3].type === VariableType.ARRAY);
     });
 
+    it('should parse a variable which is a string', () => {
+        const str = 'def myvar = "hello";\n';
+        const analyser = new Analyser(str);
+
+        const result = analyser.parse();
+
+        assertResult(result, 'var myvar = "hello";');
+        assert(analyser.scope.variables.length === 1);
+        assert(analyser.scope.variables[0].name === 'myvar');
+        assert(analyser.scope.variables[0].type === VariableType.STRING);
+    });
+
     it('should parse a for loop with a def', () => {
         const str = `
             def a = 0;

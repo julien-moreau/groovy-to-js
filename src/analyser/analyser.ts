@@ -4,7 +4,7 @@ import { TokenType } from '../tokenizer/token-type';
 import Scope from './scope';
 import Variable, { VariableType } from './scope-variable';
 
-import { operators, keywords } from './dictionnary';
+import { operators, keywords, functions, properties } from './dictionnary';
 
 export default class Analyser {
     // Public members
@@ -50,6 +50,11 @@ export default class Analyser {
                 str += `for ${this.for(newScope)}`;
                 str += `{\n ${this.parse(newScope)} \n`;
             }
+            // If condition
+            else if (this.tokenizer.matchIdentifier('if')) {
+                const newScope = new Scope(scope);
+                str += `if (${this.parse(newScope)}`;
+            }
             // Other
             else {
                 str += `${this.expression(scope).str} `;
@@ -72,6 +77,7 @@ export default class Analyser {
         
         let identifier = '';
         let range = '';
+        let accessor = '';
 
         /**
         // Identifier ?
@@ -81,25 +87,27 @@ export default class Analyser {
             if (keywords[identifier])
                 identifier = keywords[identifier];
 
-            result.str += identifier;
             result.variable = Variable.find(scope, v => v.name === identifier);
 
             // If variable definition ?
             let variableName = '';
+            let lastIdentifier = identifier;
 
             if (identifier === 'var' && (variableName = <string> this.tokenizer.matchIdentifier())) {
+                result.str += identifier;
                 result.str += ` ${variableName} `;
+
                 const variable = new Variable(scope, variableName, VariableType.ANY);
 
+                // Assign (=) ? Then get the variable's type
                 if (this.tokenizer.match(TokenType.ASSIGN)) {
                     // Check type
-                    let number = '';
-                    let range = '';
+                    let right = '';
 
                     // Number ?
-                    if ((number = this.tokenizer.matchNumber())) {
+                    if ((right = this.tokenizer.matchNumber())) {
                         variable.type = VariableType.NUMBER;
-                        result.str += `= ${number}`;
+                        result.str += `= ${right}`;
                     }
                     // Array ?
                     else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
@@ -122,9 +130,14 @@ export default class Analyser {
                         }
                     }
                     // Range ?
-                    else if ((range = this.tokenizer.matchRange())) {
-                        result.str += `= ${this.range(scope, range)}`;
+                    else if ((right = this.tokenizer.matchRange())) {
+                        result.str += `= ${this.range(scope, right)}`;
                         variable.type = VariableType.ARRAY;
+                    }
+                    // String ?
+                    else if ((right = this.tokenizer.matchString())) {
+                        result.str += `= ${right}`;
+                        variable.type = VariableType.STRING;
                     }
                     // Expression (expression) ?
                     else {
@@ -139,7 +152,7 @@ export default class Analyser {
             }
             // Assign expression ?
             else if (this.tokenizer.match(TokenType.ASSIGN)) {
-                result.str += ' = ';
+                result.str += `${identifier} = `;
                 
                 if ((identifier = <string> this.tokenizer.matchIdentifier())) {
                     // Maybe an array
@@ -154,14 +167,33 @@ export default class Analyser {
             // Identifier ?
             else if ((identifier = <string> this.tokenizer.matchIdentifier())) {
                 const left = Variable.find(scope, v => v.name === identifier);
-                result.str += ` ${this.operators(scope, left)}`;
+                result.str += ` ${lastIdentifier} ${this.operators(scope, left)}`;
+            }
+            // Accessor ?
+            else if ((accessor = this.tokenizer.matchAccessor())) {
+                const left = Variable.find(scope, v => v.name === accessor);
+                result.str += ` ${lastIdentifier} ${this.operators(scope, left)}`;
+            }
+            // Just add ?
+            else {
+                // If a variable is used
+                if (result.variable) {
+                    const operators = this.operators(scope, result.variable);
+
+                    result.variable.name = operators;
+                    result.str += operators;
+                }
+                // Just a keyword
+                else {
+                    result.str += lastIdentifier;
+                }
             }
         }
         /**
         // Array ?
         */
         else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
-            const array = this.array(scope, name);
+            const array = this.array(scope);
             result.str += array.str;
         }
         /**
@@ -182,12 +214,12 @@ export default class Analyser {
 
             while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
                 const expr = this.expression(scope);
-                if (expr.variable) {
+                if (expr.variable && expr.variable.type === VariableType.ARRAY) {
                     exprStr += this.operators(scope, expr.variable);
                     hasArray = true;
                 }
                 else
-                    exprStr+= expr.str;
+                    exprStr += expr.str;
             }
 
             exprStr+= ')';
@@ -197,6 +229,42 @@ export default class Analyser {
                 exprStr = this.operators(scope, left);
             }
             result.str += exprStr;
+        }
+        /**
+        // Accessor ?
+        */
+        else if ((accessor = this.tokenizer.matchAccessor())) {
+            let left = Variable.find(scope, v => v.name === accessor);
+
+            // A function ?
+            if (!left) {
+                const fn = accessor.substr(accessor.lastIndexOf('.') + 1);
+
+                accessor = accessor.substr(0, accessor.lastIndexOf('.'));
+                left = Variable.find(scope, v => v.name === accessor);
+                if (left.type === VariableType.ARRAY) {
+                    let method = functions.array[fn];
+                    
+                    // Property ?
+                    if (!method) {
+                        method = properties.array[fn];
+                        if (method) {
+                            // Remove function call
+                            while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
+                                this.tokenizer.getNextToken();
+                            }
+                        }
+                    }
+
+                    accessor += `.${method}`;
+                }
+            }
+            // Operators ?
+            else {
+                accessor = this.operators(scope, left);
+            }
+
+            result.str += accessor;
         }
         /**
         // Supported by JavaScript, just add token
@@ -309,12 +377,13 @@ export default class Analyser {
         let str = left.name;
 
         let operator = '';
+        let operatorAssign = '';
         let right = '';
 
         let identifier = '';
 
-        while ((operator = this.tokenizer.matchOperator())) {
-            const fn = operators[operator];
+        while ((operator = this.tokenizer.matchOperator()) || (operatorAssign = this.tokenizer.matchOperatorAssign())) {
+            const fn = operators[operator || operatorAssign];
 
             // Number
             if ((right = this.tokenizer.matchNumber())) {
@@ -424,8 +493,8 @@ export default class Analyser {
      * Converts a groovy script to JavaScript
      * @param toParse the Groovy string to transpile to JavaScript
      */
-    public static convert (toParse: string): string {
+    public static convert (toParse: string, scope?: Scope): string {
         const analyser = new Analyser(toParse + '\n');
-        return analyser.parse();
+        return analyser.parse(scope);
     }
 }

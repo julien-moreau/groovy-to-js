@@ -67,7 +67,7 @@ export default class Variable {
                             new Variable(scope, name + thing, VariableType.ARRAY);
                         } else {
                             new Variable(scope, name + thing, VariableType.MAP);
-                            add(obj, thing + '.');
+                            add(obj, name + thing + '.');
                         }
                         break;
                     default: debugger; break;

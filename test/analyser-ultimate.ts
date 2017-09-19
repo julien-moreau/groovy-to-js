@@ -1,50 +1,83 @@
 import Analyser from '../src/analyser/analyser';
+import Variable from '../src/analyser/scope-variable';
+
+import * as beautifier from 'js-beautify';
 import * as assert from 'assert';
 
 describe('A Complete Analyser', () => {
     const execute = (code: string, args: string = '', values: string = ''): any => {
-        return eval(`
-var range = function (start, end) {
-    return Array.from({ length: end - start + 1 }, (v, k) => k + start); 
-};
+        let final = `
+            var range = function (start, end) {
+                return Array.from({ length: end - start + 1 }, (v, k) => k + start); 
+            };
 
-var subtract = function (a, b) {
-    if (b instanceof Array) {
-        for (var i = 0; i < b.length; i++) { 
-            for (var j = 0; j < a.length; j++) {
-                if (a[j] === b[i]) {
-                    a.splice(j, 1);
-                    break;
+            var subtract = function (a, b) {
+                if (b instanceof Array) {
+                    for (var i = 0; i < b.length; i++) { 
+                        for (var j = 0; j < a.length; j++) {
+                            if (a[j] === b[i]) {
+                                a.splice(j, 1);
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    for (var i = 0; i < a.length; i++) {
+                        if (a[i] === b) {
+                            a.splice(i, 1);
+                        }
+                    }
                 }
-            }
-        }
-    } else {
-        for (var i = 0; i < a.length; i++) {
-            if (a[i] === b) {
-                a.splice(i, 1);
-            }
-        }
-    }
 
-    return a;
-};
+                return a;
+            };
 
-var add = function (a, b) {
-    if (b instanceof Array) {
-        for (var i = 0; i < b.length; i++) {
-            a.push(b[i]);
-        }
-    } else {
-        a.push(b);
-    }
+            var add = function (a, b) {
+                if (b instanceof Array) {
+                    for (var i = 0; i < b.length; i++) {
+                        a.push(b[i]);
+                    }
+                } else {
+                    a.push(b);
+                }
 
-    return a;
-};
+                return a;
+            };
 
-(function (${args}) {
-    ${code}
-})(${values});
-        `);
+            var swrFunc = function () {
+                return [];
+            };
+
+            var addInFunc = function () {
+                // Nothing
+            };
+
+            var session = {
+                gameData: {
+                    gme: {
+                        tir: [1, 2, 3],
+                        til: [1, 2, 3],
+                        tiw: [1, 2, 3]
+                    }
+                }
+            };
+
+            var param = {
+                num: 1
+            };
+
+            var constants = {
+                end: 0,
+                steps: [1, 2, 3]
+            };
+
+            (function (${args}) {
+                ${code}
+            })(${values});
+        `;
+
+        final = beautifier.js_beautify(final);
+        return eval(final);
     };
 
     it('should return a value', () => {
@@ -226,5 +259,120 @@ var add = function (a, b) {
         const exec = execute(result);
 
         assert(exec.length === 22);
+    });
+
+    it('should return a value', () => {
+        const toParse = `
+            def a = "hello" + "world";
+            return a;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec === 'helloworld');
+    });
+
+    it('should return a value', () => {
+        const toParse = `
+            return "hello" + "world";
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec === 'helloworld');
+    });
+
+    it('should parse an operator assign on the fly', () => {
+        const toParse = `
+            session.gameData.gme.tir -= [param.num];
+            return session.gameData.gme.tir;
+        `;
+
+        const scope = Variable.buildFrom({
+            swrFunc: 0, // Number
+            session: {
+                gameData: {
+                    gme: {
+                        tir: [1, 2, 3]
+                    }
+                }
+            },
+            param: {
+                num: 1
+            }
+        });
+
+        const result = Analyser.convert(toParse, scope);
+        const exec = execute(result);
+
+        assert(exec.length === 2);
+    });
+
+    it('should parse ultimate', () => {
+        const toParse = `
+            def tileWin = swrFunc("tilesU");
+
+            if(tileWin == 1) {
+                session.gameData.gme.tiw.add(param.num);
+            }
+            else {
+                session.gameData.gme.til.add(param.num);
+            }
+            session.gameData.gme.tir -= [param.num];
+
+            if(constants.end==session.gameData.gme.tiw.size()) {
+                session.gameData.gme.ste = constants.steps.size()-1;
+                session.gameData.gme.rem = 0;
+            }
+            else {
+                for(def ste=0;ste<constants.steps.size();ste++) {
+                    if(constants.steps[ste]>session.gameData.gme.tiw.size()) {
+                        session.gameData.gme.ste = ste-1;
+                        session.gameData.gme.rem = constants.steps[session.gameData.gme.ste + 1] - session.gameData.gme.tiw.size();
+                        break;
+                    }
+                }
+            }
+
+            session.gameData.gme.cnt = session.gameData.gme.tiw.size() + session.gameData.gme.til.size();
+            
+            addInFunc("ste", session.gameData.gme.ste);
+            addInFunc("sel", param.num);
+            addInFunc("win", tileWin);
+            addInFunc("rem", session.gameData.gme.rem);
+            addInFunc("cnt", session.gameData.gme.cnt);
+
+            return session.gameData.gme.tir;
+        `;
+
+        const scope = Variable.buildFrom({
+            swrFunc: 0, // Number
+            constants: {
+                end: 0,
+                steps: [1, 2, 3]
+            },
+            session: {
+                gameData: {
+                    gme: {
+                        til: [],
+                        tir: [],
+                        tiw: [],
+                        ste: 0,
+                        rem: 0,
+                        cnt: 0
+                    }
+                }
+            },
+            param: {
+                num: 0
+            }
+        });
+
+        const result = Analyser.convert(toParse, scope);
+        const exec = execute(result);
+
+        assert(exec.length === 2);
     });
 });
