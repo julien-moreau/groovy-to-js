@@ -171,8 +171,7 @@ export default class Analyser {
             }
             // Accessor ?
             else if ((accessor = this.tokenizer.matchAccessor())) {
-                const left = Variable.find(scope, v => v.name === accessor);
-                result.str += ` ${lastIdentifier} ${this.operators(scope, left)}`;
+                result.str += ` ${lastIdentifier} ${this.accessor(scope, accessor)}`;
             }
             // Just add ?
             else {
@@ -234,37 +233,7 @@ export default class Analyser {
         // Accessor ?
         */
         else if ((accessor = this.tokenizer.matchAccessor())) {
-            let left = Variable.find(scope, v => v.name === accessor);
-
-            // A function ?
-            if (!left) {
-                const fn = accessor.substr(accessor.lastIndexOf('.') + 1);
-
-                accessor = accessor.substr(0, accessor.lastIndexOf('.'));
-                left = Variable.find(scope, v => v.name === accessor);
-                if (left.type === VariableType.ARRAY) {
-                    let method = functions.array[fn];
-                    
-                    // Property ?
-                    if (!method) {
-                        method = properties.array[fn];
-                        if (method) {
-                            // Remove function call
-                            while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
-                                this.tokenizer.getNextToken();
-                            }
-                        }
-                    }
-
-                    accessor += `.${method}`;
-                }
-            }
-            // Operators ?
-            else {
-                accessor = this.operators(scope, left);
-            }
-
-            result.str += accessor;
+            result.str += this.accessor(scope, accessor);
         }
         /**
         // Supported by JavaScript, just add token
@@ -275,6 +244,56 @@ export default class Analyser {
         }
 
         return result;
+    }
+
+    /**
+     * Parses an accessor (a.size() or just a.something)
+     * @param scope the scope of the accessor
+     * @param accessor the accessor name
+     */
+    protected accessor (scope: Scope, accessor: string): string {
+        let left = Variable.find(scope, v => v.name === accessor);
+        
+        // A function ?
+        if (!left) {
+            const fn = accessor.substr(accessor.lastIndexOf('.') + 1);
+
+            accessor = accessor.substr(0, accessor.lastIndexOf('.'));
+            left = Variable.find(scope, v => v.name === accessor);
+            // Array ?
+            if (left.type === VariableType.ARRAY) {
+                let method = functions.array[fn];
+                
+                // Property ?
+                if (!method) {
+                    method = properties.array[fn];
+                    if (method) {
+                        // Remove function call
+                        while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
+                            this.tokenizer.getNextToken();
+                        }
+                    }
+                }
+
+                accessor += `.${method}`;
+            }
+            // Map ?
+            else if (left.type === VariableType.MAP) {
+                let method = functions.map[fn];
+                
+                if (method) {
+                    accessor += `.${method}`;
+                } else {
+                    accessor += `.${fn}`;
+                }
+            }
+        }
+        // Operators ?
+        else {
+            accessor = this.operators(scope, left);
+        }
+
+        return accessor;
     }
 
     /**
@@ -383,7 +402,10 @@ export default class Analyser {
         let identifier = '';
 
         while ((operator = this.tokenizer.matchOperator()) || (operatorAssign = this.tokenizer.matchOperatorAssign())) {
-            const fn = operators[operator || operatorAssign];
+            let fn = operators[operator || operatorAssign];
+
+            if (operatorAssign)
+                fn = `${left.name} = ${fn}`;
 
             // Number
             if ((right = this.tokenizer.matchNumber())) {

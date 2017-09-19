@@ -44,6 +44,19 @@ describe('A Complete Analyser', () => {
                 return a;
             };
 
+            var multiply = function (a, b) {
+                var arr = [];
+                for (var i = 0; i < a.length; i++) {
+                    arr.push(a[i]);
+                }
+
+                for (var i = 0; i < b - 1; i++) {
+                    a = a.concat(arr);
+                }
+
+                return a;
+            };
+
             var swrFunc = function () {
                 return [];
             };
@@ -53,7 +66,7 @@ describe('A Complete Analyser', () => {
             };
 
             var session = {
-                gameData: {
+                data: {
                     gme: {
                         tir: [1, 2, 3],
                         til: [1, 2, 3],
@@ -191,6 +204,18 @@ describe('A Complete Analyser', () => {
 
     it('should return a value', () => {
         const toParse = `
+            def a = [0, 1, 2];
+            return a * 2;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec.length === 6);
+    });
+
+    it('should return a value', () => {
+        const toParse = `
             def a = [1, 2, 3] - 1 - (3 - 2);
             return a;
         `;
@@ -286,14 +311,14 @@ describe('A Complete Analyser', () => {
 
     it('should parse an operator assign on the fly', () => {
         const toParse = `
-            session.gameData.gme.tir -= [param.num];
-            return session.gameData.gme.tir;
+            session.data.gme.tir -= [param.num];
+            return session.data.gme.tir;
         `;
 
         const scope = Variable.buildFrom({
             swrFunc: 0, // Number
             session: {
-                gameData: {
+                data: {
                     gme: {
                         tir: [1, 2, 3]
                     }
@@ -310,41 +335,41 @@ describe('A Complete Analyser', () => {
         assert(exec.length === 2);
     });
 
-    it('should parse ultimate', () => {
+    it('should parse ultimate with deep scope and loops + if + else + operators', () => {
         const toParse = `
             def tileWin = swrFunc("tilesU");
 
-            if(tileWin == 1) {
-                session.gameData.gme.tiw.add(param.num);
+            if (tileWin == 1) {
+                session.data.gme.tiw.add(param.num);
             }
             else {
-                session.gameData.gme.til.add(param.num);
+                session.data.gme.til.add(param.num);
             }
-            session.gameData.gme.tir -= [param.num];
+            session.data.gme.tir -= [param.num];
 
-            if(constants.end==session.gameData.gme.tiw.size()) {
-                session.gameData.gme.ste = constants.steps.size()-1;
-                session.gameData.gme.rem = 0;
+            if(constants.end==session.data.gme.tiw.size()) {
+                session.data.gme.ste = constants.steps.size()-1;
+                session.data.gme.rem = 0;
             }
             else {
                 for(def ste=0;ste<constants.steps.size();ste++) {
-                    if(constants.steps[ste]>session.gameData.gme.tiw.size()) {
-                        session.gameData.gme.ste = ste-1;
-                        session.gameData.gme.rem = constants.steps[session.gameData.gme.ste + 1] - session.gameData.gme.tiw.size();
+                    if(constants.steps[ste]>session.data.gme.tiw.size()) {
+                        session.data.gme.ste = ste-1;
+                        session.data.gme.rem = constants.steps[session.data.gme.ste + 1] - session.data.gme.tiw.size();
                         break;
                     }
                 }
             }
 
-            session.gameData.gme.cnt = session.gameData.gme.tiw.size() + session.gameData.gme.til.size();
+            session.data.gme.cnt = session.data.gme.tiw.size() + session.data.gme.til.size();
             
-            addInFunc("ste", session.gameData.gme.ste);
+            addInFunc("ste", session.data.gme.ste);
             addInFunc("sel", param.num);
             addInFunc("win", tileWin);
-            addInFunc("rem", session.gameData.gme.rem);
-            addInFunc("cnt", session.gameData.gme.cnt);
+            addInFunc("rem", session.data.gme.rem);
+            addInFunc("cnt", session.data.gme.cnt);
 
-            return session.gameData.gme.tir;
+            return session.data.gme.tir;
         `;
 
         const scope = Variable.buildFrom({
@@ -354,7 +379,7 @@ describe('A Complete Analyser', () => {
                 steps: [1, 2, 3]
             },
             session: {
-                gameData: {
+                data: {
                     gme: {
                         til: [],
                         tir: [],

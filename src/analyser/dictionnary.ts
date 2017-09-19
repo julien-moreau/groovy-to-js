@@ -2,7 +2,8 @@ const operators = {
     '-': 'subtract',
     '-=': 'subtract',
     '+': 'add',
-    '+=': 'add'
+    '+=': 'add',
+    '*': 'multiply'
 };
 
 const keywords = {
@@ -12,6 +13,9 @@ const keywords = {
 const functions = {
     array: {
         'add': 'push'
+    },
+    map: {
+        'containsKey': 'hasOwnProperty'
     }
 }
 

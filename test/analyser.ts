@@ -285,4 +285,34 @@ describe('A Tokenizer', () => {
         const result = analyser.parse();
         assertResult(result, `var a = [1,2,3];if (subtract(a, (subtract(a, 2)))){a ++;}`);
     });
+
+    it('should parse functions on arrays', () => {
+        const str = `
+        def a = [1, 2, 3];
+        a.add(0);`;
+
+    const analyser = new Analyser(str);
+    const result = analyser.parse();
+    assertResult(result, `var a = [1,2,3];a.push(0);`);
+    });
+
+    it('should parse functions on arrays which are properties', () => {
+        const str = `
+        def a = [1, 2, 3];
+        return a.size();`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];return a.length;`);
+    });
+
+    it('should parse functions on maps', () => {
+        const str = `
+        def a =  [a: 0];
+        return a.containsKey("a");`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = { a: 0 };return a.hasOwnProperty("a");`);
+    });
 });
