@@ -369,6 +369,20 @@ describe('A Complete Analyser', () => {
             addInFunc("rem", session.data.gme.rem);
             addInFunc("cnt", session.data.gme.cnt);
 
+            def fnVar = 0;
+            session.data.gme.tir.each {
+                fnVar += it;
+            };
+
+            session.data.gme.tir.eachWithIndex { value, index ->
+                fnVar = value * index;
+            };
+
+            def funcJoris = { param1, param2, param343 ->
+                fnVar++;
+            };
+            funcJoris(0, 0);
+
             return session.data.gme.tir;
         `;
 

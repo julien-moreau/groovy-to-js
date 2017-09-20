@@ -44,6 +44,10 @@ export default class Analyser {
                 const newScope = new Scope(scope);
                 str += `{\n ${this.parse(newScope)} \n`;
             }
+            // End code block
+            else if (this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
+                return str + '}';
+            }
             // For loop
             else if (this.tokenizer.matchIdentifier('for')) {
                 const newScope = new Scope(scope);
@@ -138,6 +142,11 @@ export default class Analyser {
                     else if ((right = this.tokenizer.matchString())) {
                         result.str += `= ${right}`;
                         variable.type = VariableType.STRING;
+                    }
+                    // Function ?
+                    else if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
+                        result.str += `= ${this.func(scope)}`;
+                        variable.type = VariableType.FUNCTION;
                     }
                     // Expression (expression) ?
                     else {
@@ -247,6 +256,38 @@ export default class Analyser {
     }
 
     /**
+     * Parses a function
+     * @param scope the scope of the function
+     */
+    protected func (scope: Scope): string {
+        let str = '';
+        let params: string = null;
+
+        const newScope = new Scope(scope);
+
+        while (!this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
+            // Pointer ? (then, params)
+            if (this.tokenizer.match(TokenType.POINTER)) {
+                params = str;
+
+                // Register variables in scope
+                const split = params.split(',');
+                split.forEach(s => new Variable(newScope, s, VariableType.ANY));
+
+                str = '';
+            }
+            // Other ?
+            else {
+                str += this.expression(newScope).str;
+            }
+        }
+
+        return `function (${params || 'it'}) {
+            ${str}
+        }`;
+    }
+
+    /**
      * Parses an accessor (a.size() or just a.something)
      * @param scope the scope of the accessor
      * @param accessor the accessor name
@@ -273,9 +314,32 @@ export default class Analyser {
                             this.tokenizer.getNextToken();
                         }
                     }
-                }
 
-                accessor += `.${method}`;
+                    accessor += `.${method}`;
+                }
+                // A method with parameters (function) ?
+                else if (method.parameters) {
+                    // A function with custom parameter names
+                    if (method.parameters === 'custom') {
+                        if (!this.tokenizer.match(TokenType.BRACKET_OPEN))
+                            throw new Error('A function on array must be followed by a {');
+
+                        accessor += `.${method.name}(${this.func(scope)})`;
+                    }
+                    // Just a function with "it" argument ?
+                    else {
+                        const newScope = new Scope(scope);
+                        const variable = new Variable(newScope, 'it', VariableType.NUMBER);
+
+                        accessor += `.${method.name}(function (${method.parameters.join(',')}) {
+                            ${this.parse(newScope)}
+                        )`;
+                    }
+                }
+                // Keep the method ?
+                else {
+                    accessor += `.${method}`;
+                }
             }
             // Map ?
             else if (left.type === VariableType.MAP) {

@@ -297,13 +297,15 @@ export default class Tokenizer {
                     this.currentToken = TokenType.OPERATOR;
                     this.currentOperator = c;
 
-                    //c = this.read();
-                    //if (c === '=' || this.isOperator.test(c)) {
                     while (!this.isEnd() && this.isOperator.test((c = this.peek()))) {
                         this.currentOperator += c;
                         this.lastString = this.currentOperator;
                         this.currentToken = TokenType.OPERATOR_ASSIGN;
                         this.forward();
+                    }
+
+                    if (this.currentOperator === '->') {
+                        this.currentToken = TokenType.POINTER;
                     }
                 }
 

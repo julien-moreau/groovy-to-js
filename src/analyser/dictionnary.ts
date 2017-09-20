@@ -16,7 +16,15 @@ const functions = {
         'println': 'console.log'
     },
     array: {
-        'add': 'push'
+        'add': 'push',
+        'each': {
+            name: 'forEach',
+            parameters: ['it']
+        },
+        'eachWithIndex': {
+            name: 'forEach',
+            parameters: 'custom'
+        }
     },
     map: {
         'containsKey': 'hasOwnProperty'

@@ -5,8 +5,8 @@ import * as assert from 'assert';
 
 describe('A Tokenizer', () => {
     const assertResult = (result: string, expected: string): void => {
-        result = result.replace(/[\n.\t. ]/g, '');
-        expected = expected.replace(/[\n.\t. ]/g, '');
+        result = result.replace(/[\n\t ]/g, '');
+        expected = expected.replace(/[\n\t ]/g, '');
 
         assert(result === expected);
     };
@@ -86,6 +86,57 @@ describe('A Tokenizer', () => {
         assert(analyser.scope.variables.length === 1);
         assert(analyser.scope.variables[0].name === 'myvar');
         assert(analyser.scope.variables[0].type === VariableType.STRING);
+    });
+
+    it('should parse a variable as a simple function', () => {
+        const str = `
+            def a = 0;
+            def f = {
+                a++;
+            };
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'var a= 0;var f = function (it) { a++; };');
+        assert(analyser.scope.variables.length === 2);
+        assert(analyser.scope.variables[1].name === 'f');
+        assert(analyser.scope.variables[1].type === VariableType.FUNCTION);
+    });
+
+    it('should parse a variable as a function with a parameter', () => {
+        const str = `
+            def a = 0;
+            def f = { param ->
+                a++;
+            };
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'var a= 0;var f = function (param) { a++; };');
+        assert(analyser.scope.variables.length === 2);
+        assert(analyser.scope.variables[1].name === 'f');
+        assert(analyser.scope.variables[1].type === VariableType.FUNCTION);
+    });
+
+    it('should parse a variable as a function with multiple parameters', () => {
+        const str = `
+            def a = 0;
+            def f = { param1, param2 ->
+                a++;
+            };
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'var a= 0;var f = function (param1, param2) { a++; };');
+        assert(analyser.scope.variables.length === 2);
+        assert(analyser.scope.variables[1].name === 'f');
+        assert(analyser.scope.variables[1].type === VariableType.FUNCTION);
     });
 
     it('should parse a for loop with a def', () => {
@@ -314,5 +365,35 @@ describe('A Tokenizer', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = { a: 0 };return a.hasOwnProperty("a");`);
+    });
+
+    it('should parse a native function on array', () => {
+        const str = `
+        def a =  [1, 2, 3];
+        def b = 0;
+        a.each {
+            b = it;
+        };
+
+        return b;`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];var b = 0;a.forEach(function(it) { b = it; }); return b;`);
+    });
+
+    it('should parse a native function on array with custom parameters', () => {
+        const str = `
+        def a =  [1, 2, 3];
+        def b = 0;
+        a.eachWithIndex { value, index ->
+            b = value;
+        };
+
+        return b;`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];var b = 0;a.forEach(function(value,index) { b = value; }); return b;`);
     });
 });
