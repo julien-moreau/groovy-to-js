@@ -16,6 +16,8 @@ export enum TokenType {
     POINTER = 15,
     TIMES = 16,
 
+    COMMENT = 17,
+
     ERROR = 100,
 
     ACCESSOR = 1 << 10,

@@ -171,6 +171,30 @@ describe('A Tokenizer', () => {
         assertResult(result, `var a = 0;for (var i = 0;i < 10;i ++){a ++;}`);
     });
 
+    it('should parse a comment', () => {
+        const str = `
+            // A comment
+            def a = 0;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `// A comment var a = 0;`);
+    });
+
+    it('should parse a multiline comment', () => {
+        const str = `
+            /*
+            Comment
+            */
+            def a = 0;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `/*Comment*/ var a = 0;`);
+    });
+
     it('should parse a for loop without a def', () => {
         const str = `
             def a = 0;

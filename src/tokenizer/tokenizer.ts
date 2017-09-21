@@ -11,6 +11,7 @@ export default class Tokenizer {
     public currentOperator: string = '';
     public currentRange: string = '';
     public currentAccessor: string = '';
+    public currentComment: string = '';
 
     public lastString: string = '';
     public currentLine: number = 1;
@@ -305,6 +306,30 @@ export default class Tokenizer {
 
                     if (this.currentOperator === '->') {
                         this.currentToken = TokenType.POINTER;
+                    } else if (this.currentOperator === '//' || this.currentOperator === '/*') {
+                        const multiline = this.currentOperator === '/*';
+                        this.currentToken = TokenType.COMMENT;
+                        this.currentComment = this.currentOperator;
+
+                        while (!this.isEnd() && (c = this.peek())) {
+                            if (c === '\n' && !multiline) {
+                                break;
+                            } else if (multiline && c === '*') {
+                                this.currentComment += c;
+                                this.forward();
+
+                                if ((c = this.peek()) === '/') {
+                                    this.currentComment += c;
+                                    this.forward();
+                                    break;
+                                }
+                            }
+
+                            this.currentComment += c;
+                            this.forward();
+                        }
+
+                        this.lastString = this.currentComment;
                     }
                 }
                 // Accessor
