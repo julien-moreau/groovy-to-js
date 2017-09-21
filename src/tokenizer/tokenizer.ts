@@ -198,7 +198,6 @@ export default class Tokenizer {
             case '}': return this.currentToken = TokenType.BRACKET_CLOSE;
             case '\n': this.currentLine++; return this.currentToken = TokenType.LINE_END;
             case ':': return this.currentToken = TokenType.DESCRIPTOR;
-            case '.': return this.currentToken = TokenType.ACCESSOR;
             default: {
                 // Number or range
                 if (this.isDigit.test(c)) {
@@ -307,6 +306,11 @@ export default class Tokenizer {
                     if (this.currentOperator === '->') {
                         this.currentToken = TokenType.POINTER;
                     }
+                }
+                // Accessor
+                else if (c === '.') {
+                    this.currentAccessor = c;
+                    this.currentToken = TokenType.ACCESSOR;
                 }
 
                 break;

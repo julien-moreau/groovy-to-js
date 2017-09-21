@@ -202,7 +202,20 @@ export default class Analyser {
         */
         else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
             const array = this.array(scope);
-            result.str += array.str;
+
+            // Direct method call ?
+            if ((accessor = this.tokenizer.matchAccessor())) {
+                const variable = new Variable(scope, array.str, VariableType.ARRAY);
+
+                if (!(identifier = <string> this.tokenizer.matchIdentifier())) {
+                    throw new Error('A method must be an identifier');
+                }
+                result.str += `${this.accessor(scope, array.str + '.' + identifier)}`;
+            }
+            // Just add ?
+            else {
+                result.str += array.str;
+            }
         }
         /**
         // Range ?
@@ -294,15 +307,55 @@ export default class Analyser {
      */
     protected accessor (scope: Scope, accessor: string): string {
         let left = Variable.find(scope, v => v.name === accessor);
-        
-        // A function ?
-        if (!left) {
-            const fn = accessor.substr(accessor.lastIndexOf('.') + 1);
 
-            accessor = accessor.substr(0, accessor.lastIndexOf('.'));
-            left = Variable.find(scope, v => v.name === accessor);
+        const fn = accessor.substr(accessor.lastIndexOf('.') + 1);
+        accessor = accessor.substr(0, accessor.lastIndexOf('.'));
+
+        // A function ?
+        const previousLeft = Variable.find(scope, v => v.name === accessor);
+        if (!left)
+            left = previousLeft;
+
+        if (!left && !previousLeft)
+            throw new Error('Cannot find accessor named ' + accessor);
+
+        // Is it a function ?
+        if (fn) {
+            // Already a function / closure ?
+            if (previousLeft.type === VariableType.FUNCTION || left.type === VariableType.FUNCTION) {
+                accessor += '.' + fn;
+
+                let variable = Variable.find(scope, v => v.name === accessor);
+                if (!variable)
+                    variable = new Variable(scope, accessor, VariableType.ANY);
+
+                if (this.tokenizer.match(TokenType.ASSIGN)) {
+                    accessor += ' = ';
+                    
+                    let right = '';
+                    // Number ?
+                    if ((right = this.tokenizer.matchNumber())) {
+                        variable.type = VariableType.NUMBER;
+                    }
+                    // Identifier ?
+                    else if ((right = <string> this.tokenizer.matchIdentifier()) || (right = this.tokenizer.matchAccessor())) {
+                        const rightVariable = Variable.find(scope, v => v.name === right);
+                        variable.type = rightVariable ? rightVariable.type : VariableType.ANY;
+                    }
+                    // Array or map ?
+                    else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
+                        const array = this.array(scope);
+                        const rightVariable = new Variable(scope, array.str, array.type);
+
+                        right = this.operators(scope, rightVariable);
+                        variable.type = array.type;
+                    }
+
+                    accessor += right;
+                }
+            }
             // Array ?
-            if (left.type === VariableType.ARRAY) {
+            else if (left.type === VariableType.ARRAY) {
                 let method = functions.array[fn];
                 
                 // Property ?
@@ -313,12 +366,21 @@ export default class Analyser {
                         while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
                             this.tokenizer.getNextToken();
                         }
-                    }
 
-                    accessor += `.${method}`;
+                        accessor += `.${method}`;
+                    } else {
+                        accessor = this.operators(scope, left);
+                    }
                 }
                 // A method with parameters (function) ?
                 else if (method.parameters) {
+                    // Avoid parenthesis
+                    if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
+                        while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
+                            this.tokenizer.getNextToken();
+                        }
+                    }
+
                     // A function with custom parameter names
                     if (method.parameters === 'custom') {
                         if (!this.tokenizer.match(TokenType.BRACKET_OPEN))
@@ -351,12 +413,15 @@ export default class Analyser {
                     accessor += `.${fn}`;
                 }
             }
+            // Operators
+            else {
+                accessor = this.operators(scope, left);
+            }
         }
-        // Operators ?
+        // Operators
         else {
             accessor = this.operators(scope, left);
         }
-
         return accessor;
     }
 

@@ -88,7 +88,7 @@ describe('A Tokenizer', () => {
         assert(analyser.scope.variables[0].type === VariableType.STRING);
     });
 
-    it('should parse a variable as a simple function', () => {
+    it('should parse a variable as a simple function/closure', () => {
         const str = `
             def a = 0;
             def f = {
@@ -103,6 +103,26 @@ describe('A Tokenizer', () => {
         assert(analyser.scope.variables.length === 2);
         assert(analyser.scope.variables[1].name === 'f');
         assert(analyser.scope.variables[1].type === VariableType.FUNCTION);
+    });
+
+    it('should parse a variable as a simple function/closure and set members to it', () => {
+        const str = `
+            def a = 0;
+            def f = {};
+            f.init = 1;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'var a= 0;var f = function (it) {}; f.init = 1;');
+        assert(analyser.scope.variables.length === 3);
+
+        assert(analyser.scope.variables[1].name === 'f');
+        assert(analyser.scope.variables[1].type === VariableType.FUNCTION);
+
+        assert(analyser.scope.variables[2].name === 'f.init');
+        assert(analyser.scope.variables[2].type === VariableType.NUMBER);
     });
 
     it('should parse a variable as a function with a parameter', () => {
@@ -347,6 +367,20 @@ describe('A Tokenizer', () => {
     assertResult(result, `var a = [1,2,3];a.push(0);`);
     });
 
+    it('should call a function with also parenthesis', () => {
+        const str = `
+            def a = [1, 2, 3];
+            def b = 0;
+            a.each() {
+                b++;
+            };
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];var b = 0;a.forEach(function(it) { b++; });`);
+    });
+
     it('should parse functions on arrays which are properties', () => {
         const str = `
         def a = [1, 2, 3];
@@ -369,17 +403,29 @@ describe('A Tokenizer', () => {
 
     it('should parse a native function on array', () => {
         const str = `
-        def a =  [1, 2, 3];
-        def b = 0;
-        a.each {
-            b = it;
-        };
+            def a =  [1, 2, 3];
+            def b = 0;
+            a.each {
+                b = it;
+            };
 
-        return b;`;
+            return b;`;
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = [1,2,3];var b = 0;a.forEach(function(it) { b = it; }); return b;`);
+    });
+
+    it('should parse a native function on array', () => {
+        const str = `
+            def a =  [1, 2, 3];
+            a.sort { a, b -> a - b }
+
+            return a;`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];a.sort(function(a,b) { a-b }) return a;`);
     });
 
     it('should parse a native function on array with custom parameters', () => {
@@ -395,5 +441,37 @@ describe('A Tokenizer', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = [1,2,3];var b = 0;a.forEach(function(value,index) { b = value; }); return b;`);
+    });
+
+    it('should parse a native function on array just after definition', () => {
+        const str = `
+            def a = 0;
+            [1, 2, 3].each {
+                a++;
+            };`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = 0;[1,2,3].forEach(function(it) { a++; });`);
+    });
+
+    it('should parse a native function on array just after definition with multiple parameters', () => {
+        const str = `
+            def a = 0;
+            [1, 2, 3].eachWithIndex { value, index ->
+                a++;
+            };`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = 0;[1,2,3].forEach(function(value,index) { a++; });`);
+    });
+
+    it('should parse a native parameter on array just after definition', () => {
+        const str = `return [1, 2, 3].size();`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `return [1,2,3].length;`);
     });
 });

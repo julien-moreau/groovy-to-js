@@ -335,6 +335,27 @@ describe('A Complete Analyser', () => {
         assert(exec.length === 2);
     });
 
+    it('parse functions/closures and guess types/new types', () => {
+        const toParse = `
+            def ev = {};
+            ev.init = null;
+            ev.init = 0;
+            ev.init = [1,2,3];
+
+            def fnVar = 0;
+            ev.init.each {
+                fnVar++;
+            }
+
+            return fnVar;
+        `;
+
+        const result = Analyser.convert(toParse);
+        const exec = execute(result);
+
+        assert(exec === 3);
+    })
+
     it('should parse ultimate with deep scope and loops + if + else + operators', () => {
         const toParse = `
             def tileWin = swrFunc("tilesU");
@@ -382,6 +403,15 @@ describe('A Complete Analyser', () => {
                 fnVar++;
             };
             funcJoris(0, 0);
+
+            def ev = {};
+            ev.init = null;
+            ev.init = 0;
+            ev.init = [1,2,3];
+
+            ev.init.each {
+                fnVar++;
+            }
 
             return session.data.gme.tir;
         `;

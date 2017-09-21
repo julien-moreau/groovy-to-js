@@ -24,6 +24,10 @@ const functions = {
         'eachWithIndex': {
             name: 'forEach',
             parameters: 'custom'
+        },
+        'sort': {
+            name: 'sort',
+            parameters: 'custom'
         }
     },
     map: {
