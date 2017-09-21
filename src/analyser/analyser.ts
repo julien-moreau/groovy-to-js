@@ -82,6 +82,7 @@ export default class Analyser {
         let identifier = '';
         let range = '';
         let accessor = '';
+        let number = '';
 
         /**
         // Identifier ?
@@ -258,6 +259,25 @@ export default class Analyser {
             result.str += this.accessor(scope, accessor);
         }
         /**
+        // Number ?
+        */
+        else if ((number = this.tokenizer.matchNumber())) {
+            // Method call ?
+            if (number[number.length - 1] === '.') {
+                identifier = <string> this.tokenizer.matchIdentifier();
+                if (identifier) {
+                    new Variable(scope, number.replace('.', ''), VariableType.NUMBER);
+                    result.str += this.accessor(scope, number + identifier);
+                } else {
+                    result.str += number;
+                }
+            }
+            // Just add as number
+            else {
+                result.str += number;
+            }
+        }
+        /**
         // Supported by JavaScript, just add token
         */
         else {
@@ -411,6 +431,28 @@ export default class Analyser {
                     accessor += `.${method}`;
                 } else {
                     accessor += `.${fn}`;
+                }
+            }
+            // Number ?
+            else if (left.type === VariableType.NUMBER) {
+                let method = functions.number[fn];
+
+                if (method) {
+                    // Avoid parenthesis
+                    if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
+                        while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
+                            this.tokenizer.getNextToken();
+                        }
+                    }
+
+                    const newScope = new Scope(scope);
+                    const variable = new Variable(newScope, 'it', VariableType.NUMBER);
+
+                    accessor = `${method.name}(${left.name}, function (${method.parameters.join(',')}) {
+                        ${this.parse(newScope)}
+                    )`;
+                } else {
+                    accessor = this.operators(scope, left);
                 }
             }
             // Operators

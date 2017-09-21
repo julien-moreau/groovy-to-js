@@ -32,6 +32,12 @@ const functions = {
     },
     map: {
         'containsKey': 'hasOwnProperty'
+    },
+    number: {
+        'times': {
+            name: 'times',
+            parameters: ['it']
+        }
     }
 }
 

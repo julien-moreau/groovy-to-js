@@ -57,6 +57,12 @@ describe('A Complete Analyser', () => {
                 return a;
             };
 
+            var times = function (a, b) {
+                for (var i = 0; i < a; i++) {
+                    b(i);
+                }
+            };
+
             var swrFunc = function () {
                 return [];
             };
@@ -410,6 +416,10 @@ describe('A Complete Analyser', () => {
             ev.init = [1,2,3];
 
             ev.init.each {
+                fnVar++;
+            }
+
+            3.times {
                 fnVar++;
             }
 

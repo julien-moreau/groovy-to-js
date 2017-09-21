@@ -14,6 +14,7 @@ export enum TokenType {
     DESCRIPTOR = 13,
     RANGE = 14,
     POINTER = 15,
+    TIMES = 16,
 
     ERROR = 100,
 

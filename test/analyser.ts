@@ -455,6 +455,18 @@ describe('A Tokenizer', () => {
         assertResult(result, `var a = 0;[1,2,3].forEach(function(it) { a++; });`);
     });
 
+    it('should parse a "times" keyword on a number', () => {
+        const str = `
+            def a = 0;
+            3.times {
+                a++;
+            };`;
+
+    const analyser = new Analyser(str);
+    const result = analyser.parse();
+    assertResult(result, `var a = 0;times(3, function (it) { a++; });`);
+    });
+
     it('should parse a native function on array just after definition with multiple parameters', () => {
         const str = `
             def a = 0;
