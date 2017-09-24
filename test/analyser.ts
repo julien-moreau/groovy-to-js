@@ -100,7 +100,7 @@ describe('A Tokenizer', () => {
         const result = analyser.parse();
 
         assertResult(result, 'var a= 0;var f = function (it) { a++; };');
-        assert(analyser.scope.variables.length === 3);
+        assert(analyser.scope.variables.length === 2);
         assert(analyser.scope.variables[1].name === 'f');
         assert(analyser.scope.variables[1].type === VariableType.FUNCTION);
     });
@@ -116,13 +116,13 @@ describe('A Tokenizer', () => {
         const result = analyser.parse();
 
         assertResult(result, 'var a= 0;var f = function (it) {}; f.init = 1;');
-        assert(analyser.scope.variables.length === 4);
+        assert(analyser.scope.variables.length === 3);
 
         assert(analyser.scope.variables[1].name === 'f');
         assert(analyser.scope.variables[1].type === VariableType.FUNCTION);
 
-        assert(analyser.scope.variables[3].name === 'f.init');
-        assert(analyser.scope.variables[3].type === VariableType.NUMBER);
+        assert(analyser.scope.variables[2].name === 'f.init');
+        assert(analyser.scope.variables[2].type === VariableType.NUMBER);
     });
 
     it('should parse a variable as a function with a parameter', () => {
@@ -137,7 +137,7 @@ describe('A Tokenizer', () => {
         const result = analyser.parse();
 
         assertResult(result, 'var a= 0;var f = function (param) { a++; };');
-        assert(analyser.scope.variables.length === 3);
+        assert(analyser.scope.variables.length === 2);
         assert(analyser.scope.variables[1].name === 'f');
         assert(analyser.scope.variables[1].type === VariableType.FUNCTION);
     });
@@ -154,7 +154,7 @@ describe('A Tokenizer', () => {
         const result = analyser.parse();
 
         assertResult(result, 'var a= 0;var f = function (param1, param2) { a++; };');
-        assert(analyser.scope.variables.length === 3);
+        assert(analyser.scope.variables.length === 2);
         assert(analyser.scope.variables[1].name === 'f');
         assert(analyser.scope.variables[1].type === VariableType.FUNCTION);
     });
@@ -217,6 +217,30 @@ describe('A Tokenizer', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = 0;for (var i in range(0, 19)){a ++;}`);
+    });
+
+    it('should parse a variable as a range', () => {
+        const str = `def a = 0..19;`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = range(0, 19);`);
+    });
+
+    it('should parse a variable as a range with operators', () => {
+        const str = `def a = 0..19 + 1;`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = range(0, 19 + 1);`);
+    });
+
+    it('should parse a variable as a range with operators', () => {
+        const str = `def a = (0..19) + 1;`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = add(range(0, 19), 1);`);
     });
 
     it('should parse a for loop with a in, in an array', () => {
@@ -305,8 +329,8 @@ describe('A Tokenizer', () => {
         const result = analyser.parse();
         assertResult(result, `var a = [1,2,3];var b = [1,2,3];var c = subtract(a, b);`);
 
-        assert(analyser.scope.variables[1].name === 'c');
-        assert(analyser.scope.variables[1].type === VariableType.ARRAY);
+        assert(analyser.scope.variables[2].name === 'c');
+        assert(analyser.scope.variables[2].type === VariableType.ARRAY);
     });
 
     it('should parse a while loop', () => {
@@ -452,7 +476,7 @@ describe('A Tokenizer', () => {
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
-        assertResult(result, `var a = [1,2,3];a.sort(function(a,b) { a-b }) return a;`);
+        assertResult(result, `var a = [1,2,3];a.sort(function(a,b) { subtract(a, b) }) return a;`);
     });
 
     it('should parse a native function on array with custom parameters', () => {
@@ -512,5 +536,26 @@ describe('A Tokenizer', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `return [1,2,3].length;`);
+    });
+
+    it('should access an array member', () => {
+        const str = `
+            def a = [1, 2, 3];
+            return a[1];`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3]; return a[1];`);
+    });
+
+    it('should access an array member', () => {
+        const str = `
+            def a = [1, 2, 3];
+            def step = 1;
+            return a[step];`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3]; var step = 1; return a[step];`);
     });
 });

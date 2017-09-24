@@ -105,9 +105,9 @@ export default class Analyser {
 
                 if (this.tokenizer.match(TokenType.ASSIGN)) {
                     const expr = this.expression(scope, variableName);
-
+                    
                     result.variable.type = expr.variable.type;
-                    result.str = `var ${variableName} = ${expr.str}`;
+                    result.str = `var ${variableName} = ${this.operators(scope, expr.variable)}`;
 
                     expr.variable.remove(); // Remove the temp variable
                 }
@@ -124,6 +124,8 @@ export default class Analyser {
                     result.str = this.operators(scope, result.variable);
                 else
                     result.str = right;
+
+                result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
             }
         }
         // Number or times ?
@@ -147,8 +149,12 @@ export default class Analyser {
         // Array ?
         else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
             const array = this.array(scope, previous);
+
             result.variable = new Variable(scope, array.str, array.type);
             result.str = this.operators(scope, result.variable);
+
+            result.variable.remove();
+            result.variable = new Variable(scope, result.str, result.variable.type);
         }
         // Function/Closure ?
         else if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
@@ -166,6 +172,23 @@ export default class Analyser {
 
             if (!variable)
                 result.variable.remove();
+
+            result.variable = new Variable(scope, result.str, result.variable.type);
+            result.variable.remove();
+        }
+        // Range ?
+        else if ((right = this.tokenizer.matchRange())) {
+            const split = right.split('..');
+
+            while ((right = this.tokenizer.matchOperator())) {
+                const expr = this.expression(scope);
+                split[1] += ` ${right} ${expr.str}`;
+            }
+
+            const range = `range(${split[0]}, ${split[1]})`;
+
+            result.variable = new Variable(scope, range, VariableType.ARRAY);
+            result.str = range;
         }
         // Parenthetized expression ?
         else if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
@@ -173,7 +196,12 @@ export default class Analyser {
 
             while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
                 const expr = this.expression(scope, previous);
-                result.str += expr.str;
+                const variable = new Variable(scope, expr.str, expr.variable ? expr.variable.type : VariableType.ANY);
+
+                result.str += this.operators(scope, variable);
+                result.variable = expr.variable;
+
+                variable.remove();
             }
 
             result.str += ')';
@@ -196,7 +224,7 @@ export default class Analyser {
         let params: string = null;
 
         const newScope = new Scope(scope);
-        const variable = new Variable(scope, 'it', VariableType.ANY);
+        const variable = new Variable(newScope, 'it', VariableType.ANY);
 
         while (!this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
             // Pointer ? (then, params)
@@ -211,7 +239,8 @@ export default class Analyser {
             }
             // Other ?
             else {
-                str += this.expression(newScope).str;
+                const expr = this.expression(newScope);
+                str += expr.str;
             }
         }
 
@@ -245,6 +274,8 @@ export default class Analyser {
 
             if (!found)
                 new Variable(scope, accessor, expr.variable.type);
+            else
+                variable.type = expr.variable.type;
 
             accessor = `${accessor} = ${expr.str}`;
             expr.variable.remove(); // Remove the temp variable
