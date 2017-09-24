@@ -7,7 +7,10 @@
         "mocha": "3.5.3",
         "typescript": "2.5.2",
         "assert": "1.4.1",
-        "nyc": "11.2.1"
+        "nyc": "11.2.1",
+        "dts-bundle": "0.7.2",
+        "systemjs": "^0.20.12",
+        "systemjs-builder": "0.16.4"
     },
     "dependencies": {
         "js-beautify": "1.6.14"
@@ -16,6 +19,7 @@
         "watch": "tsc -p . --watch",
         "compile": "tsc -p .",
         "clean": "rm -rf .build",
+        "build": "npm run clean && npm run compile && node ./scripts/bundle.js",
         "test": "npm run compile && mocha --recursive ./.build/test/**/*.js",
         "cov": "nyc --reporter=lcov --reporter=text-lcov npm test"
     }

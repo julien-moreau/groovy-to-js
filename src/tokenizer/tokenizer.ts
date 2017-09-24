@@ -11,8 +11,10 @@ export default class Tokenizer {
     public currentOperator: string = '';
     public currentRange: string = '';
     public currentAccessor: string = '';
+    public currentComment: string = '';
 
-    public lastString = '';
+    public lastString: string = '';
+    public currentLine: number = 1;
 
     // Private members
     private pos: number;
@@ -20,7 +22,7 @@ export default class Tokenizer {
 
     private isLetterOrDigitPattern: RegExp = /^[a-zA-Z0-9]+$/;
     private isDigit: RegExp = /^[0-9]+$/;
-    private isOperator: RegExp = /^[-.+.*./.<.>]+$/;
+    private isOperator: RegExp = /^[-+*/<>=]+$/;
 
     /**
      * Constructor
@@ -66,7 +68,7 @@ export default class Tokenizer {
      * @param token the token to match
      */
     public match(token: TokenType): boolean {
-        if (this.currentToken == token) {
+        if (this.currentToken === token) {
             this.getNextToken();
             return true;
         }
@@ -87,7 +89,7 @@ export default class Tokenizer {
             return false;
         }
 
-        if (this.currentToken == TokenType.IDENTIFIER) {
+        if (this.currentToken === TokenType.IDENTIFIER) {
             const identifier = this.currentIdentifier;
             this.getNextToken();
             return identifier;
@@ -133,6 +135,45 @@ export default class Tokenizer {
     }
 
     /**
+     * Matches if the current token is an operator (+.-./.*.<.>)
+     */
+    public matchOperator(): string {
+        if (this.currentToken === TokenType.OPERATOR) {
+            const operator = this.currentOperator;
+            this.getNextToken();
+            return operator;
+        }
+
+        return null;
+    }
+
+    /**
+     * Matches if the current token is an operator assign (++.--.+=.-=.etc.)
+     */
+    public matchOperatorAssign(): string {
+        if (this.currentToken === TokenType.OPERATOR_ASSIGN) {
+            const operator = this.currentOperator;
+            this.getNextToken();
+            return operator;
+        }
+
+        return null;
+    }
+
+    /**
+     * Matches if the current token is an accessor (x.something) -> x
+     */
+    public matchRange(): string {
+        if (this.currentToken === TokenType.RANGE) {
+            const range = this.currentRange;
+            this.getNextToken();
+            return range;
+        }
+
+        return null;
+    }
+
+    /**
      * Returns the next token in the string to parse
      */
     public getNextToken (): TokenType {
@@ -156,10 +197,10 @@ export default class Tokenizer {
             case ',': return this.currentToken = TokenType.COMMA;
             case '{': return this.currentToken = TokenType.BRACKET_OPEN;
             case '}': return this.currentToken = TokenType.BRACKET_CLOSE;
-            case '\n': return this.currentToken = TokenType.LINE_END;
+            case '\n': this.currentLine++; return this.currentToken = TokenType.LINE_END;
             case ':': return this.currentToken = TokenType.DESCRIPTOR;
             default: {
-                // Number
+                // Number or range
                 if (this.isDigit.test(c)) {
                     this.currentToken = TokenType.NUMBER;
                     this.currentNumber = c;
@@ -256,12 +297,45 @@ export default class Tokenizer {
                     this.currentToken = TokenType.OPERATOR;
                     this.currentOperator = c;
 
-                    c = this.read();
-                    if (c === '=' || this.isOperator.test(c)) {
+                    while (!this.isEnd() && this.isOperator.test((c = this.peek()))) {
                         this.currentOperator += c;
                         this.lastString = this.currentOperator;
                         this.currentToken = TokenType.OPERATOR_ASSIGN;
+                        this.forward();
                     }
+
+                    if (this.currentOperator === '->') {
+                        this.currentToken = TokenType.POINTER;
+                    } else if (this.currentOperator === '//' || this.currentOperator === '/*') {
+                        const multiline = this.currentOperator === '/*';
+                        this.currentToken = TokenType.COMMENT;
+                        this.currentComment = this.currentOperator;
+
+                        while (!this.isEnd() && (c = this.peek())) {
+                            if (c === '\n' && !multiline) {
+                                break;
+                            } else if (multiline && c === '*') {
+                                this.currentComment += c;
+                                this.forward();
+
+                                if ((c = this.peek()) === '/') {
+                                    this.currentComment += c;
+                                    this.forward();
+                                    break;
+                                }
+                            }
+
+                            this.currentComment += c;
+                            this.forward();
+                        }
+
+                        this.lastString = this.currentComment;
+                    }
+                }
+                // Accessor
+                else if (c === '.') {
+                    this.currentAccessor = c;
+                    this.currentToken = TokenType.ACCESSOR;
                 }
 
                 break;
@@ -269,9 +343,10 @@ export default class Tokenizer {
         }
 
         if (this.currentToken === TokenType.ERROR) {
-            throw new Error('Invalid Groovy Script');
+            throw new Error('Invalid Groovy Script at line ' + this.currentLine);
         }
 
+        //console.log(this.lastString);
         return this.currentToken;
     }
 }

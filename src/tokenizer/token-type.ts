@@ -13,6 +13,10 @@ export enum TokenType {
     OPERATOR_ASSIGN = 12,
     DESCRIPTOR = 13,
     RANGE = 14,
+    POINTER = 15,
+    TIMES = 16,
+
+    COMMENT = 17,
 
     ERROR = 100,
 
