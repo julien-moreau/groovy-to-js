@@ -548,7 +548,7 @@ describe('A Tokenizer', () => {
         assertResult(result, `var a = [1,2,3]; return a[1];`);
     });
 
-    it('should access an array member', () => {
+    it('should access an array member using a variable', () => {
         const str = `
             def a = [1, 2, 3];
             def step = 1;
@@ -557,5 +557,17 @@ describe('A Tokenizer', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = [1,2,3]; var step = 1; return a[step];`);
+    });
+
+    it('should compare array members', () => {
+        const str = `
+            def a = [1, 2, 3];
+            if (a[1] < 10) {
+                return 0;
+            }`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `vara=[1,2,3];if(a[1] <10){return0;}`);
     });
 });

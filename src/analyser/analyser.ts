@@ -433,6 +433,11 @@ export default class Analyser {
         while ((operator = this.tokenizer.matchOperator()) || (operatorAssign = this.tokenizer.matchOperatorAssign())) {
             let fn = operators[operator || operatorAssign];
 
+            if (!fn) {
+                str = `${str}${operator}${this.expression(scope).str}`;
+                continue;
+            }
+
             if (operatorAssign)
                 fn = `${left.name} = ${fn}`;
 
