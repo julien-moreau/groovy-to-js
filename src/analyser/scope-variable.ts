@@ -11,6 +11,7 @@ export enum VariableType {
 
 export default class Variable {
     // Public members
+    public scope: Scope;
     public name: string;
     public type: VariableType;
 
@@ -23,8 +24,18 @@ export default class Variable {
     constructor (scope: Scope, name: string, type: VariableType) {
         this.name = name;
         this.type = type;
+        this.scope = scope;
 
         scope.variables.push(this);
+    }
+
+    /**
+     * Removes the current variable from the scope
+     */
+    public remove () {
+        const index = this.scope.variables.indexOf(this);
+        if (index !== -1)
+            this.scope.variables.splice(index, 1);
     }
 
     /**
