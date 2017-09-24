@@ -397,7 +397,7 @@ describe('A Complete Analyser', () => {
             addInFunc("cnt", session.data.gme.cnt);
 
             def fnVar = 0;
-            session.data.gme.tir.each {
+            session.data.gme.tir.each() {
                 fnVar += it;
             };
 
