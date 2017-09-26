@@ -6,6 +6,8 @@ import Scope from './analyser/scope';
 import Variable, { VariableType } from './analyser/scope-variable';
 import { operators, keywords, functions, properties } from './analyser/dictionnary';
 
+import * as augmentations from './augmentations/index';
+
 export {
     Tokenizer,
     TokenType,
@@ -13,5 +15,7 @@ export {
     Analyser,
     Scope,
     Variable, VariableType,
-    operators, keywords, functions, properties
+    operators, keywords, functions, properties,
+
+    augmentations
 }

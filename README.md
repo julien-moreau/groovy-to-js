@@ -8,9 +8,8 @@ Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 * Supports ranges ([number]..[number], [identifier]..[number], etc.)
 
 # Roadmap
-* Provide operator functions (subtract, add, etc.)
-* Provide range function
-* Provide times function
+* Test on advanced code
+* Add support for multiline strings (""" to ``)
 * Provide more functions to dictionnary
 
 # Using the converter
@@ -94,4 +93,29 @@ console.log(js);
     /*
     return subtract(myObject.member, -1);
     */
+```
+
+# Requiring groovy functions
+These are called augmentations that you can import like:
+```typescript
+import { augmentations } from 'groovy-to-js';
+
+const a = [1, 2, 3];
+const b = 2;
+const c = [2];
+
+console.log(augmentations.subtract(a, b)); // [1, 3]
+console.log(augmentations.subtract(a, c)); // [1, 3]
+
+console.log(augmentations.add(a, b)); // [1, 2, 3, 2];
+console.log(augmentations.add(a, c)); // [1, 2, 3, 2];
+
+console.log(augmentations.multiply(a, b)); // [1, 2, 3, 1, 2, 3];
+console.log(augmentations.multiply(a, c)); // [1, 2, 3, 1, 2, 3];
+
+console.log(augmentations.range(2, 5)); // [2, 3, 4, 5]
+
+augmentations.times(3, (it) => {
+    console.log(it);
+}); // 3 -> 3 -> 3
 ```

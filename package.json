@@ -4,6 +4,10 @@
     "name": "Julien Moreau-Mathis",
     "url": "https://medium.com/@Luaacro"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/julien-moreau/groovy-to-js/tree/master"
+  },
   "version": "0.0.2",
   "devDependencies": {
     "@types/mocha": "2.2.43",
