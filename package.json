@@ -9,6 +9,7 @@
     "url": "https://github.com/julien-moreau/groovy-to-js/tree/master"
   },
   "version": "0.0.2",
+  "main": "dist/groovy-to-js.js",
   "devDependencies": {
     "@types/mocha": "2.2.43",
     "@types/node": "8.0.19",
