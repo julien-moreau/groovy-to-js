@@ -78,7 +78,7 @@ To prevent this, just build a base scope, that's all!
 Example:
 ```typescript
 // Import scope
-import { Analyser, Scope } from 'groovy-to-js';
+import { Analyser, Variable } from 'groovy-to-js';
 
 const scope = Variable.buildFrom({
     member: [1, 2, 3]
