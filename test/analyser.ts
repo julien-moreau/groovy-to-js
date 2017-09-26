@@ -562,12 +562,24 @@ describe('A Tokenizer', () => {
     it('should compare array members', () => {
         const str = `
             def a = [1, 2, 3];
-            if (a[1] < 10) {
+            if (a[1] < 10) {
                 return 0;
             }`;
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `vara=[1,2,3];if(a[1] <10){return0;}`);
+    });
+
+    it('should compare array members on accessor', () => {
+        const str = `
+            def a = [arr: [1, 2, 3]];
+            if (a.a[1] < 10) {
+                return 0;
+            }`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = {arr: [1,2,3]};if(a.a[1] <10){return0;}`);
     });
 });

@@ -175,6 +175,11 @@ export default class Analyser {
 
             result.variable = new Variable(scope, result.str, result.variable.type);
             result.variable.remove();
+
+            // Array accessor ?
+            if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
+                result.str += this.array(scope).str;
+            }
         }
         // Range ?
         else if ((right = this.tokenizer.matchRange())) {
