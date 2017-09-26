@@ -26,7 +26,7 @@ bundle('./dist/groovy-to-js.js', {
   externals: []
 });
 
-bundle('./dist/groovy-to-js.js', {
+bundle('./dist/groovy-to-js.min.js', {
   globalName: 'GTJ',
   format: 'cjs',
   minify: true,

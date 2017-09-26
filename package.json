@@ -1,5 +1,9 @@
 {
     "name": "groovy-to-js",
+    "author": {
+        "name": "Julien Moreau-Mathis",
+        "url": "https://medium.com/@Luaacro"
+    },
     "version": "0.0.1",
     "devDependencies": {
         "@types/mocha": "2.2.43",

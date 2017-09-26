@@ -1,0 +1,7 @@
+.build
+.nyc_output
+.vscode
+coverage
+scripts
+test
+tsconfig.json
