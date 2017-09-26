@@ -13,7 +13,8 @@ const keywords = {
 
 const functions = {
     global: {
-        'println': 'console.log'
+        'println': 'console.log',
+        'assert': 'assert'
     },
     array: {
         'add': 'push',

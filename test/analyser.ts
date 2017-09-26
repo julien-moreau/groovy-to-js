@@ -582,4 +582,30 @@ describe('A Tokenizer', () => {
         const result = analyser.parse();
         assertResult(result, `var a = {arr: [1,2,3]};if(a.a[1] <10){return0;}`);
     });
+
+    it('should call global functions without parenthesis', () => {
+        const str = `
+            def a = 1;
+            println "coucou";
+            println 0;
+            println a;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a =  1; console.log("coucou"); console.log(0); console.log(a);`);
+    });
+
+    it('should call global functions with parenthesis', () => {
+        const str = `
+            def a = 1;
+            println ("coucou");
+            println (0);
+            println (a);
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a =  1; console.log(("coucou")); console.log((0)); console.log((a));`);
+    });
 });

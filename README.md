@@ -12,6 +12,17 @@ Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 * Add support for multiline strings (""" to ``)
 * Provide more functions to dictionnary
 
+# Not supported
+* def map = [:]
+* map."double quote" = "ALLOWED"
+* map.'single quote' = "ALLOWED"
+* map.'''triple single quote''' = "ALLOWED"
+* map."""triple double quote""" = "ALLOWED"
+* "script ${value}"
+* array[index < 0]
+* array << value (-> push(value))
+* array[index1][index2] (arrays of arrays)
+
 # Using the converter
 ```typescript
 // Import lib

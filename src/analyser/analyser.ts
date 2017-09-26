@@ -119,15 +119,27 @@ export default class Analyser {
                 if (this.tokenizer.match(TokenType.INSTRUCTION_END))
                     result.str += ';';
             }
-            // Just add ?
+            // Class declaration ?
+            else if (right === 'class') {
+                throw new Error('Not implemented yet (class)');
+            }
+            // Not declaration
             else {
-                result.variable = Variable.find(scope, v => v.name === right);
-                if (result.variable)
-                    result.str = this.operators(scope, result.variable);
-                else
-                    result.str = right;
+                // Method call ?
+                if (functions.global[right]) {
+                    const fn = functions.global[right];
+                    result.str = `${fn}(${this.expression(scope, previous).str})`;
+                }
+                // Just add
+                else {
+                    result.variable = Variable.find(scope, v => v.name === right);
+                    if (result.variable)
+                        result.str = this.operators(scope, result.variable);
+                    else
+                        result.str = right;
 
-                result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
+                    result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
+                }
             }
         }
         // Number or times ?
