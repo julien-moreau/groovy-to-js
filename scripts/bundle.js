@@ -23,14 +23,14 @@ bundle('./dist/groovy-to-js.js', {
   globalName: 'GTJ',
   format: 'cjs',
   sourceMaps: true,
-  externals: []
+  externals: ['js-beautify']
 });
 
 bundle('./dist/groovy-to-js.min.js', {
   globalName: 'GTJ',
   format: 'cjs',
   minify: true,
-  externals: []
+  externals: ['js-beautify']
 });
 
 // Bundle DTS

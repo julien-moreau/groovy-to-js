@@ -6,6 +6,8 @@ import Variable, { VariableType } from './scope-variable';
 
 import { operators, keywords, functions, properties } from './dictionnary';
 
+import * as beautifier from 'js-beautify';
+
 export default class Analyser {
     // Public members
     public tokenizer: Tokenizer;
@@ -565,6 +567,7 @@ export default class Analyser {
      */
     public static convert (toParse: string, scope?: Scope): string {
         const analyser = new Analyser(toParse + '\n');
-        return analyser.parse(scope);
+        const result = analyser.parse(scope);
+        return beautifier.js_beautify(result);
     }
 }
