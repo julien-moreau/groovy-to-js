@@ -13,10 +13,6 @@ Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 * Provide more functions to dictionnary
 
 # Not supported
-* map."double quote" = "ALLOWED"
-* map.'single quote' = "ALLOWED"
-* map.'''triple single quote''' = "ALLOWED"
-* map."""triple double quote""" = "ALLOWED"
 * array[index < 0]
 * array << value (-> push(value))
 

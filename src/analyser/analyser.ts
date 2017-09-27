@@ -279,12 +279,24 @@ export default class Analyser {
      * @param accessor the accessor name
      */
     protected accessor (scope: Scope, accessor: string): string {
+        // Accessor with string ?
+        if (accessor[accessor.length - 1] === '.') {
+            let key = '';
+            if ((key = this.tokenizer.matchString())) {
+                return accessor.substr(0, this.accessor.length - 1) + `[${key}]`;
+            }
+        }
+
         let variable = Variable.find(scope, v => v.name === accessor);
         let found = variable !== null;
 
         const lastDot = accessor.lastIndexOf('.');
         const prev = accessor.substr(0, lastDot);
         const next = accessor.substr(lastDot + 1, accessor.length);
+
+        // Empty string, just accessing a member using quotes (i.e a["b"])
+        if (prev.length === 0)
+            return accessor;
 
         if (!variable) {
             variable = Variable.find(scope, v => v.name === prev);

@@ -23,6 +23,18 @@ describe('A Tokenizer', () => {
         assert(analyser.scope.variables[0].type === VariableType.NUMBER);
     });
 
+    it('should parse a variable definition without value', () => {
+        const str = 'def myvar;\n';
+        const analyser = new Analyser(str);
+
+        const result = analyser.parse();
+
+        assertResult(result, 'var myvar;');
+        assert(analyser.scope.variables.length === 1);
+        assert(analyser.scope.variables[0].name === 'myvar');
+        assert(analyser.scope.variables[0].type === VariableType.ANY);
+    });
+
     it('should parse multiple variable definition', () => {
         const str = `
             def myvar1 = 0;
@@ -648,6 +660,50 @@ describe('A Tokenizer', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = {arr: [[1, 2], [1, 2]]};if(a.a[1][0] <10){return0;}`);
+    });
+
+    it('should access a map member using double quotes', () => {
+        const str = `
+            def a = [:];
+            a."b" = 0;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = { }; a["b"] = 0;`);
+    });
+
+    it('should access a map member using single quotes', () => {
+        const str = `
+            def a = [:];
+            a.'b' = 0;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = { }; a['b'] = 0;`);
+    });
+
+    it('should access a map member using triple single quotes', () => {
+        const str = `
+            def a = [:];
+            a.'''b''' = 0;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = { }; a[\`b\`] = 0;`);
+    });
+
+    it('should access a map member using triple double quotes', () => {
+        const str = `
+            def a = [:];
+            a."""b""" = 0;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = { }; a[\`b\`] = 0;`);
     });
 
     it('should call global functions without parenthesis', () => {
