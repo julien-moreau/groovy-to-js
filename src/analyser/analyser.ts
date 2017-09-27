@@ -158,6 +158,11 @@ export default class Analyser {
         // String ?
         else if ((right = this.tokenizer.matchString())) {
             result.variable = new Variable(scope, right, VariableType.STRING);
+
+            // Prevent strings with variable access (i.e 'first name: ${name}' for example)
+            if (result.variable.name.indexOf('${') !== -1)
+                result.variable.name = '`' + result.variable.name.substr(1, result.variable.name.length - 2) + '`';
+
             result.str = this.operators(scope, result.variable);
         }
         // Array ?
@@ -490,6 +495,14 @@ export default class Analyser {
     protected array (scope: Scope, name?: string): { str: string, type: VariableType } {
         let str = '[';
         let identifier = '';
+
+        // [:]
+        if (this.tokenizer.match(TokenType.DESCRIPTOR) && this.tokenizer.match(TokenType.ACCESSOR_CLOSE)) {
+            return {
+                str: '{ }',
+                type: VariableType.MAP
+            };
+        }
 
         while (!this.tokenizer.match(TokenType.ACCESSOR_CLOSE)) {
             if ((identifier = <string> this.tokenizer.matchIdentifier())) {

@@ -13,7 +13,6 @@ Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 * Provide more functions to dictionnary
 
 # Not supported
-* def map = [:]
 * map."double quote" = "ALLOWED"
 * map.'single quote' = "ALLOWED"
 * map.'''triple single quote''' = "ALLOWED"
@@ -80,7 +79,7 @@ Would return:
 
 The problem is, `member` is an array, so the output should be:
 ```typescript
-`return subtract(myObject.member, -1);
+`return subtract(myObject.member, 1);
 ```
 
 To prevent this, just build a base scope, that's all!
@@ -102,7 +101,7 @@ const js = Analyser.convert(groovy, scope);
 console.log(js);
 // Gives:
     /*
-    return subtract(myObject.member, -1);
+    return subtract(myObject.member, 1);
     */
 ```
 

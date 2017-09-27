@@ -76,6 +76,14 @@ describe('A Tokenizer', () => {
         assert(analyser.scope.variables[3].type === VariableType.ARRAY);
     });
 
+    it('should define an empty map', () => {
+        const str = 'def map = [:];';
+        const analyser = new Analyser(str);
+
+        const result = analyser.parse();
+        assertResult(result, 'var map = { };');
+    });
+
     it('should parse a variable which is a string', () => {
         const str = 'def myvar = "hello";\n';
         const analyser = new Analyser(str);
@@ -86,6 +94,24 @@ describe('A Tokenizer', () => {
         assert(analyser.scope.variables.length === 1);
         assert(analyser.scope.variables[0].name === 'myvar');
         assert(analyser.scope.variables[0].type === VariableType.STRING);
+    });
+
+    it('should parse a variable which is a string with variable access', () => {
+        const str = `
+            def myvar = "hello";
+            def str = "name is \${hello}";
+        `;
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'var myvar = "hello"; var str = `name is ${hello}`;');
+        assert(analyser.scope.variables.length === 2);
+
+        assert(analyser.scope.variables[0].name === 'myvar');
+        assert(analyser.scope.variables[0].type === VariableType.STRING);
+
+        assert(analyser.scope.variables[1].name === 'str');
+        assert(analyser.scope.variables[1].type === VariableType.STRING);
     });
 
     it('should parse a variable as a simple function/closure', () => {
