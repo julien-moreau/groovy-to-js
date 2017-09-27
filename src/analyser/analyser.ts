@@ -160,7 +160,7 @@ export default class Analyser {
             result.variable = new Variable(scope, right, VariableType.STRING);
 
             // Prevent strings with variable access (i.e 'first name: ${name}' for example)
-            if (result.variable.name.indexOf('${') !== -1)
+            if (result.variable.name.match(/\$\{(.*)\}/))
                 result.variable.name = '`' + result.variable.name.substr(1, result.variable.name.length - 2) + '`';
 
             result.str = this.operators(scope, result.variable);
