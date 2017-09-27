@@ -14,7 +14,6 @@ Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 
 # Not supported
 * array[index < 0]
-* array << value (-> push(value))
 
 # Using the converter
 ```typescript

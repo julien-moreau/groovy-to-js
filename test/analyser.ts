@@ -65,6 +65,17 @@ describe('A Tokenizer', () => {
         assert(analyser.scope.variables[0].type === VariableType.ARRAY);
     });
 
+    it('should push a value in array using operator <<', () => {
+        const str = `
+            def myvar = [1, 2, 3];
+            myvar << 1;
+        `;
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'var myvar = [1,2,3]; myvar = add(myvar, 1);');
+    });
+
     it('should a variable definition which is a map', () => {
         const str = 'def myvar = [a: 0, b: 0, c: [1, 2, 3]];\n';
         const analyser = new Analyser(str);
