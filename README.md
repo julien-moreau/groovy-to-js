@@ -19,7 +19,6 @@ Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 * map."""triple double quote""" = "ALLOWED"
 * array[index < 0]
 * array << value (-> push(value))
-* array[index1][index2] (arrays of arrays)
 
 # Using the converter
 ```typescript

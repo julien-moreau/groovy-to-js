@@ -603,6 +603,17 @@ describe('A Tokenizer', () => {
         assertResult(result, `var a = [1,2,3]; var step = 1; return a[step];`);
     });
 
+    it('should access an array member or an array', () => {
+        const str = `
+            def a = [[1, 2], [1, 2]];
+            return a[0][1];
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [[1, 2], [1, 2]]; return a[0][1];`);
+    });
+
     it('should compare array members', () => {
         const str = `
             def a = [1, 2, 3];
@@ -625,6 +636,18 @@ describe('A Tokenizer', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = {arr: [1,2,3]};if(a.a[1] <10){return0;}`);
+    });
+
+    it('should compare array members or an array on accessor', () => {
+        const str = `
+            def a = [arr: [[1, 2], [1, 2]]];
+            if (a.a[1][0] < 10) {
+                return 0;
+            }`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = {arr: [[1, 2], [1, 2]]};if(a.a[1][0] <10){return0;}`);
     });
 
     it('should call global functions without parenthesis', () => {
