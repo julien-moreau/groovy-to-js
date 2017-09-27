@@ -96,6 +96,24 @@ describe('A Tokenizer', () => {
         assert(analyser.scope.variables[0].type === VariableType.STRING);
     });
 
+    it('should parse a variable which is a string with triple simple quotes', () => {
+        const str = `def myvar = '''hello''';`;
+        const analyser = new Analyser(str);
+
+        const result = analyser.parse();
+
+        assertResult(result, 'var myvar = `hello`;');
+    });
+
+    it('should parse a variable which is a string with triple double quotes', () => {
+        const str = `def myvar = """hello""";`;
+        const analyser = new Analyser(str);
+
+        const result = analyser.parse();
+
+        assertResult(result, 'var myvar = `hello`;');
+    });
+
     it('should parse a variable which is a string with variable access', () => {
         const str = `
             def myvar = "hello";

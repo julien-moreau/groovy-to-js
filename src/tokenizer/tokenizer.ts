@@ -274,6 +274,28 @@ export default class Tokenizer {
 
                     this.currentString += c;
                     this.forward();
+
+                    // Check triple quotes
+                    if (this.currentString === '""' || this.currentString === "''") {
+                        if ((c = this.peek()) === '"' || c === "'") {
+                            this.currentString += c;
+                            this.forward();
+
+                            let count = 0;
+
+                            while (!this.isEnd() && count < 3 && (c = this.peek())) {
+                                this.currentString += c;
+                                this.forward();
+
+                                if (c !== '"' && c !== "'")
+                                    count = 0;
+                                else
+                                    count++;
+                            }
+
+                            this.currentString = '`' + this.currentString.substr(3, this.currentString.length - 6) + '`';
+                        }
+                    }
                     
                     this.lastString = this.currentString;
                 }

@@ -6,10 +6,10 @@ Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 * Supports [number].times { ... }
 * Supports simple closures
 * Supports ranges ([number]..[number], [identifier]..[number], etc.)
+* Supports triple quotes (simple & double) strings
 
 # Roadmap
 * Test on advanced code
-* Add support for multiline strings (""" to ``)
 * Provide more functions to dictionnary
 
 # Not supported
@@ -17,7 +17,6 @@ Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 * map.'single quote' = "ALLOWED"
 * map.'''triple single quote''' = "ALLOWED"
 * map."""triple double quote""" = "ALLOWED"
-* "script ${value}"
 * array[index < 0]
 * array << value (-> push(value))
 * array[index1][index2] (arrays of arrays)
