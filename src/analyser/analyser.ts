@@ -321,8 +321,9 @@ export default class Analyser {
 
         if (!variable) {
             variable = Variable.find(scope, v => v.name === prev);
-            if (!variable)
-                throw new Error(`Variable named "${prev}" was not declared`);
+            if (!variable) {
+                //throw new Error(`Variable named "${prev}" was not declared`);
+            }
         }
 
         // Assign ?
@@ -375,10 +376,10 @@ export default class Analyser {
                 if (typeof fn === 'string') {
                     // Simple method call with parenthetized expression
                     accessor = `${prev}.${fn}${this.expression(scope).str}`;
-
                     variable = new Variable(scope, accessor, VariableType.VOID);
-                    variable.remove();
-                } else if (fn.returns) {
+                }
+                // Function which returns a specific type ?
+                else if (fn.returns) {
                     accessor = `${prev}.${fn.name}${this.expression(scope).str}`;
                     
                     variable = new Variable(scope, accessor, fn.returns);
@@ -389,8 +390,6 @@ export default class Analyser {
                         accessor = this.accessor(scope, accessor + newAccessor).str;
                         variable.name = accessor;
                     }
-
-                    variable.remove();
                 } else {
                     // Avoid parenthesis
                     if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
@@ -399,14 +398,12 @@ export default class Analyser {
                     }
 
                     let hasArguments = this.tokenizer.currentToken === TokenType.BRACKET_OPEN;
-                    
                     accessor = `${prev}.${fn.name}(${hasArguments ? this.expression(scope).str : ''})`;
-
                     variable = new Variable(scope, accessor, VariableType.VOID);
-                    variable.remove();
                 }
-            
             }
+
+            variable.remove();
         }
 
         return { str: accessor, variable: variable };
@@ -506,7 +503,7 @@ export default class Analyser {
      * @param left the left variable
      */
     protected operators (scope: Scope, left: Variable): string {
-        if (!left || left.type !== VariableType.ARRAY)
+        if (left.type !== VariableType.ARRAY && left.type !== VariableType.ANY)
             return left.name;
         
         let str = left.name;

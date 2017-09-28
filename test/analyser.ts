@@ -4,7 +4,7 @@ import { VariableType } from '../src/analyser/scope-variable';
 
 import * as assert from 'assert';
 
-describe('A Tokenizer', () => {
+describe('An Analyser', () => {
     const assertResult = (result: string, expected: string): void => {
         result = result.replace(/[\n\t ]/g, '');
         expected = expected.replace(/[\n\t ]/g, '');
@@ -593,7 +593,7 @@ describe('A Tokenizer', () => {
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
-        assertResult(result, `var a = [1,2,3];a.sort(function(a,b) { a - b }) return a;`);
+        assertResult(result, `var a = [1,2,3];a.sort(function(a,b) { subtract(a, b) }) return a;`);
     });
 
     it('should parse a native function on array with custom parameters', () => {
