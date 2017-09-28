@@ -1,4 +1,5 @@
-# groovy-to-js
+# groovy-to-js ![Build status](https://travis-ci.org/julien-moreau/groovy-to-js.svg?branch=master)
+
 Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 
 # Features
