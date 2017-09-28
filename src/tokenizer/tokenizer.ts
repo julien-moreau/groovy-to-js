@@ -22,7 +22,7 @@ export default class Tokenizer {
 
     private isLetterOrDigitPattern: RegExp = /^[a-zA-Z0-9]+$/;
     private isDigit: RegExp = /^[0-9]+$/;
-    private isOperator: RegExp = /^[-+*/<>=]+$/;
+    private isOperator: RegExp = /^[-+*/<>=!&|]+$/;
 
     /**
      * Constructor
@@ -198,6 +198,7 @@ export default class Tokenizer {
             case '{': return this.currentToken = TokenType.BRACKET_OPEN;
             case '}': return this.currentToken = TokenType.BRACKET_CLOSE;
             case '\n': this.currentLine++; return this.currentToken = TokenType.LINE_END;
+            case '\r': this.currentLine++; return this.currentToken = TokenType.LINE_END;
             case ':': return this.currentToken = TokenType.DESCRIPTOR;
             default: {
                 // Number or range
@@ -358,6 +359,13 @@ export default class Tokenizer {
                 else if (c === '.') {
                     this.currentAccessor = c;
                     this.currentToken = TokenType.ACCESSOR;
+
+                    while (!this.isEnd() && (this.isLetterOrDigitPattern.test(c = this.peek()) || c === '_' || c === '.')) {
+                        this.currentAccessor += c;
+                        this.forward();
+                    }
+
+                    this.lastString = this.currentAccessor;
                 }
 
                 break;

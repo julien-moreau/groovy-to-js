@@ -1,3 +1,5 @@
+import { VariableType } from './scope-variable';
+
 const operators = {
     '-': 'subtract',
     '-=': 'subtract',
@@ -30,6 +32,10 @@ const functions = {
         'sort': {
             name: 'sort',
             parameters: 'custom'
+        },
+        'unique': {
+            name: 'unique',
+            returns: VariableType.ARRAY
         }
     },
     map: {
@@ -45,7 +51,10 @@ const functions = {
 
 const properties = {
     array: {
-        'size': 'length'
+        'size': {
+            name: 'length',
+            returns: VariableType.NUMBER
+        }
     }
 }
 

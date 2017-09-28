@@ -19,15 +19,15 @@ export default class Analyser {
      */
     constructor (toParse: string) {
         this.tokenizer = new Tokenizer(toParse);
+
+        // Get first token of code block
+        this.tokenizer.getNextToken();
     }
 
     /**
      * Parses the current groovy script block of code to to JavaScript
      */
     public parse (scope?: Scope): string {
-        // Get first token of code block
-        this.tokenizer.getNextToken();
-
         // Start with an empty string
         let str = '';
 
@@ -54,7 +54,7 @@ export default class Analyser {
             else if (this.tokenizer.matchIdentifier('for')) {
                 const newScope = new Scope(scope);
                 str += `for ${this.for(newScope)}`;
-                str += `{\n ${this.parse(newScope)} \n`;
+                str += this.parse(newScope);
             }
             // While loop
             else if (this.tokenizer.matchIdentifier('while')) {
@@ -62,12 +62,12 @@ export default class Analyser {
                 const expr = this.expression(scope);
 
                 str += `while ${expr.str}`;
-                str += `{\n ${this.parse(newScope)} \n`;
+                str += this.parse(newScope);
             }
             // If condition
             else if (this.tokenizer.matchIdentifier('if')) {
                 const newScope = new Scope(scope);
-                str += `if (${this.parse(newScope)}`;
+                str += `if ${this.parse(newScope)}`;
             }
             // Return statement
             else if (this.tokenizer.matchIdentifier('return')) {
@@ -133,12 +133,24 @@ export default class Analyser {
                 // Just add
                 else {
                     result.variable = Variable.find(scope, v => v.name === right);
-                    if (result.variable)
+                    if (result.variable) {
                         result.str = this.operators(scope, result.variable);
-                    else
-                        result.str = right;
 
-                    result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
+                        if (previous)
+                            result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
+                    }
+                    else {
+                        // New variable on the fly ?
+                        if (this.tokenizer.match(TokenType.ASSIGN)) {
+                            const expr = this.expression(scope);
+                            result.str = `var ${right} = ${expr.str}`;
+                            result.variable = new Variable(scope, right, expr.variable.type);
+                        }
+                        else {
+                            result.str = right;
+                            result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
+                        }
+                    }
                 }
             }
         }
@@ -184,9 +196,9 @@ export default class Analyser {
         // Accessor ?
         else if ((right = this.tokenizer.matchAccessor())) {
             const accessor = this.accessor(scope, right);
-            const variable = Variable.find(scope, v => v.name === accessor);
+            const variable = accessor.variable || Variable.find(scope, v => v.name === accessor.str);
 
-            result.variable = variable || new Variable(scope, accessor, VariableType.ANY);
+            result.variable = variable || new Variable(scope, accessor.str, VariableType.ANY);
             result.str = this.operators(scope, result.variable);
 
             if (!variable)
@@ -198,6 +210,8 @@ export default class Analyser {
             // Array accessor ?
             if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
                 result.str += this.array(scope).str;
+                result.variable.name = result.str;
+                result.variable.type = VariableType.ANY;
             }
         }
         // Range ?
@@ -285,12 +299,12 @@ export default class Analyser {
      * @param scope the scope of the accessor
      * @param accessor the accessor name
      */
-    protected accessor (scope: Scope, accessor: string): string {
+    protected accessor (scope: Scope, accessor: string): { str: string, variable: Variable } {
         // Accessor with string ?
         if (accessor[accessor.length - 1] === '.') {
             let key = '';
             if ((key = this.tokenizer.matchString())) {
-                return accessor.substr(0, this.accessor.length - 1) + `[${key}]`;
+                return { str: accessor.substr(0, this.accessor.length - 1) + `[${key}]`, variable: null };
             }
         }
 
@@ -303,7 +317,7 @@ export default class Analyser {
 
         // Empty string, just accessing a member using quotes (i.e a["b"])
         if (prev.length === 0)
-            return accessor;
+            return { str: accessor, variable: null };
 
         if (!variable) {
             variable = Variable.find(scope, v => v.name === prev);
@@ -321,10 +335,13 @@ export default class Analyser {
                 variable.type = expr.variable.type;
 
             accessor = `${accessor} = ${expr.str}`;
-            expr.variable.remove(); // Remove the temp variable
+            expr.variable.remove(); // Remove the temp variable of expr
 
             if (this.tokenizer.match(TokenType.INSTRUCTION_END))
                 accessor += ';';
+
+            variable = new Variable(scope, accessor, variable.type);
+            variable.remove();
         }
         // Method call ?
         else {
@@ -337,35 +354,62 @@ export default class Analyser {
                 let fn = 
                     variable.type === VariableType.ARRAY ? properties.array[next] : null;
 
+                variable = new Variable(scope, '', variable.type);
+                variable.remove();
+                
                 if (!fn)
                     accessor = `${prev}.${next}`;
                 else {
-                    accessor = `${prev}.${fn}`;
+                    accessor = `${prev}.${fn.name}`;
+                    variable.type = fn.returns;
 
                     // Avoid parenthesis
                     while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE))
                         this.tokenizer.getNextToken();
                 }
+
+                variable.name = accessor;
             }
             // Method found
             else {
                 if (typeof fn === 'string') {
                     // Simple method call with parenthetized expression
                     accessor = `${prev}.${fn}${this.expression(scope).str}`;
+
+                    variable = new Variable(scope, accessor, VariableType.VOID);
+                    variable.remove();
+                } else if (fn.returns) {
+                    accessor = `${prev}.${fn.name}${this.expression(scope).str}`;
+                    
+                    variable = new Variable(scope, accessor, fn.returns);
+
+                    // Check if next accessors?
+                    let newAccessor = '';
+                    if ((newAccessor = this.tokenizer.matchAccessor())) {
+                        accessor = this.accessor(scope, accessor + newAccessor).str;
+                        variable.name = accessor;
+                    }
+
+                    variable.remove();
                 } else {
                     // Avoid parenthesis
                     if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
                         while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE))
                             this.tokenizer.getNextToken();
                     }
+
+                    let hasArguments = this.tokenizer.currentToken === TokenType.BRACKET_OPEN;
                     
-                    accessor = `${prev}.${fn.name}(${this.expression(scope).str})`;
+                    accessor = `${prev}.${fn.name}(${hasArguments ? this.expression(scope).str : ''})`;
+
+                    variable = new Variable(scope, accessor, VariableType.VOID);
+                    variable.remove();
                 }
             
             }
         }
 
-        return accessor;
+        return { str: accessor, variable: variable };
     }
 
     /**
@@ -477,7 +521,7 @@ export default class Analyser {
             let fn = operators[operator || operatorAssign];
 
             if (!fn) {
-                str = `${str}${operator}${this.expression(scope).str}`;
+                str = `${str}${operator || operatorAssign}${this.expression(scope).str}`;
                 continue;
             }
 
@@ -499,7 +543,9 @@ export default class Analyser {
             }
             // Expression
             else {
-                str = `${fn}(${str}, ${this.expression(scope).str})`;
+                const expr = this.expression(scope);
+                str = `${fn}(${str}, ${expr.str})`;
+                expr.variable.remove();
             }
         }
 
@@ -542,16 +588,22 @@ export default class Analyser {
                 // Just add string
                 str += this.tokenizer.lastString;
                 this.tokenizer.getNextToken();
+
+                // Should check types of array members HERE
+                /*
+                const expr = this.expression(scope);
+                str += expr.str;
+                */
             }
         }
 
         str += ']';
 
         // Direct method call ?
-        if (this.tokenizer.match(TokenType.ACCESSOR)) {
-            const fn = <string> this.tokenizer.matchIdentifier();
-            const variable = new Variable(scope, `${str}.${fn}`, VariableType.ARRAY);
-            str = this.accessor(scope, `${str}.${fn}`);
+        let fn = '';
+        if ((fn = this.tokenizer.matchAccessor())) {
+            const variable = new Variable(scope, `${str}${fn}`, VariableType.ARRAY);
+            str = this.accessor(scope, `${str}${fn}`).str;
         }
 
         return {

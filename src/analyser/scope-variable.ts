@@ -6,7 +6,8 @@ export enum VariableType {
     ARRAY,
     MAP,
     STRING,
-    FUNCTION
+    FUNCTION,
+    VOID
 }
 
 export default class Variable {
@@ -81,7 +82,7 @@ export default class Variable {
                             add(obj, name + thing + '.');
                         }
                         break;
-                    default: debugger; break;
+                    default: break;
                 }
             }
         };

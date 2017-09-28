@@ -1,4 +1,5 @@
 import Analyser from '../src/analyser/analyser';
+import Variable from '../src/analyser/scope-variable';
 import { VariableType } from '../src/analyser/scope-variable';
 
 import * as assert from 'assert';
@@ -105,6 +106,55 @@ describe('A Tokenizer', () => {
 
         const result = analyser.parse();
         assertResult(result, 'var map = { };');
+    });
+
+    it('should parse | operator (and ||)', () => {
+        const str = 'def a = 0; return (a | 0) && a || 0;';
+        const analyser = new Analyser(str);
+
+        const result = analyser.parse();
+        assertResult(result, 'var a = 0; return (a | 0) && a || 0;');
+    });
+
+    it('should parse || operators in a if', () => {
+        const str = `
+            if(param["r_"+i][j]<1 || param["r_"+i][j]>10) {
+
+            }
+        `;
+        const analyser = new Analyser(str);
+
+        const result = analyser.parse();
+        assertResult(result, 'if (param["r_"+i][j]<1 || param["r_"+i][j]>10) {}');
+    });
+
+    it('should parse a function callback without parameters (.sort for example)', () => {
+        const str = `
+            def a = [1, 2, 3];
+            a.sort();
+        `;
+
+        const result = Analyser.convert(str);
+        assertResult(result, 'var a = [1, 2, 3]; a.sort();');
+    });
+
+    it('should affect a value to a variable and store its real type', () => {
+        const str = `
+            def a = [1, 2, 3];
+            b = a;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'var a = [1, 2, 3]; var b = a;');
+        assert(analyser.scope.variables.length === 2);
+
+        assert(analyser.scope.variables[0].name === "a");
+        assert(analyser.scope.variables[0].type === VariableType.ARRAY);
+
+        assert(analyser.scope.variables[1].name === "b");
+        assert(analyser.scope.variables[1].type === VariableType.ARRAY);
     });
 
     it('should parse a variable which is a string', () => {
@@ -543,7 +593,7 @@ describe('A Tokenizer', () => {
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
-        assertResult(result, `var a = [1,2,3];a.sort(function(a,b) { subtract(a, b) }) return a;`);
+        assertResult(result, `var a = [1,2,3];a.sort(function(a,b) { a - b }) return a;`);
     });
 
     it('should parse a native function on array with custom parameters', () => {
@@ -626,6 +676,40 @@ describe('A Tokenizer', () => {
         assertResult(result, `var a = [1,2,3]; var step = 1; return a[step];`);
     });
 
+    it('should parse unary operator', () => {
+        const str = `
+            def a = true;
+            a = !a;
+        `;
+
+        const result = Analyser.convert(str);
+        assertResult(result, `var a = true; a = !a;`);
+    });
+
+    it('should parse a if using unary operator + beginning code block with accessor', () => {
+        const str = `
+            if(aa.bb[0] != 0) {
+                a.b.c.msg="samuel";
+                return false;
+            }
+        `;
+
+        const result = Analyser.convert(str, Variable.buildFrom({
+            aa: {
+                bb: []
+            },
+            a: {
+                b: {
+                    c: {
+                        msg: ''
+                    }
+                }
+            }
+        }));
+
+        assertResult(result, 'if(aa.bb[0] != 0){a.b.c.msg="samuel";return false;}');
+    });
+
     it('should access an array member or an array', () => {
         const str = `
             def a = [[1, 2], [1, 2]];
@@ -652,25 +736,25 @@ describe('A Tokenizer', () => {
     it('should compare array members on accessor', () => {
         const str = `
             def a = [arr: [1, 2, 3]];
-            if (a.a[1] < 10) {
+            if (a.arr[1] < 10) {
                 return 0;
             }`;
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
-        assertResult(result, `var a = {arr: [1,2,3]};if(a.a[1] <10){return0;}`);
+        assertResult(result, `var a = {arr: [1,2,3]};if(a.arr[1] <10){return0;}`);
     });
 
     it('should compare array members or an array on accessor', () => {
         const str = `
             def a = [arr: [[1, 2], [1, 2]]];
-            if (a.a[1][0] < 10) {
+            if (a.arr[1][0] < 10) {
                 return 0;
             }`;
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
-        assertResult(result, `var a = {arr: [[1, 2], [1, 2]]};if(a.a[1][0] <10){return0;}`);
+        assertResult(result, `var a = {arr: [[1, 2], [1, 2]]};if(a.arr[1][0] <10){return0;}`);
     });
 
     it('should access a map member using double quotes', () => {
@@ -751,5 +835,15 @@ describe('A Tokenizer', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a =  1; console.log(("coucou")); console.log((0)); console.log((a));`);
+    });
+
+    it('should set property "length" after method call', () => {
+        const str = `
+            def a = [1, 2, 3];
+            return a.unique(false).size();
+        `;
+
+        const result = Analyser.convert(str);
+        assertResult(result, 'var a = [1, 2, 3]; return a.unique(false).length;');
     });
 });
