@@ -717,6 +717,16 @@ describe('A Tokenizer', () => {
         assertResult(result, `var a = { }; a[\`b\`] = 0;`);
     });
 
+    it('should parse functions on map which is a member declared using quotes', () => {
+        const str = `
+            def a = [:];
+            a.'fn' = { p -> println p; };
+            a.fn(1);
+        `;
+        const result = Analyser.convert(str);
+        assertResult(result, `var a = {}; a['fn'] = function(p) { console.log(p); }; a.fn(1);`);
+    });
+
     it('should call global functions without parenthesis', () => {
         const str = `
             def a = 1;

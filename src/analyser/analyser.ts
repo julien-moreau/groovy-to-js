@@ -230,6 +230,13 @@ export default class Analyser {
 
             result.str += ')';
         }
+        // Assign ? (=)
+        else if (this.tokenizer.match(TokenType.ASSIGN)) {
+            const expr = this.expression(scope);
+
+            result.variable = expr.variable;
+            result.str += `= ${expr.str}`;
+        }
         // Just add token
         else {
             result.str += this.tokenizer.lastString;
