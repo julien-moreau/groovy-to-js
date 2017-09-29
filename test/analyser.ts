@@ -157,6 +157,94 @@ describe('An Analyser', () => {
         assert(analyser.scope.variables[1].type === VariableType.ARRAY);
     });
 
+    it('should affect a value of a member to a variable and store its real type', () => {
+        const str = `
+            def a = [
+                a: 0,
+                b: 0,
+                c: [1, 2, 3]
+            ];
+
+            b = a.b;
+            c = a.c;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'var a = { a: 0, b: 0, c: [1, 2, 3] }; var b = a.b; var c = a.c;');
+        assert(analyser.scope.variables.length === 6);
+
+        assert(analyser.scope.variables[0].name === "a");
+        assert(analyser.scope.variables[0].type === VariableType.MAP);
+
+        assert(analyser.scope.variables[4].name === "b");
+        assert(analyser.scope.variables[4].type === VariableType.NUMBER);
+
+        assert(analyser.scope.variables[5].name === "c");
+        assert(analyser.scope.variables[5].type === VariableType.ARRAY);
+    });
+
+    it('should affect a value from an array to a variable and have type ANY', () => {
+        const str = `
+            def a = [
+                b: [[
+                    c: [1, 2, 3]
+                ]]
+            ];
+
+            b = a.b[0];
+            return b.c.intersect(b.c.take(1)).size();
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'var a = { b: [{ c: [1, 2, 3] }] }; var b = a.b[0]; return b.c.intersect(b.c.take(1)).length;');
+        assert(analyser.scope.variables.length === 4);
+
+        assert(analyser.scope.variables[0].name === "a");
+        assert(analyser.scope.variables[0].type === VariableType.MAP);
+
+        assert(analyser.scope.variables[2].name === "b");
+        assert(analyser.scope.variables[2].type === VariableType.ANY);
+    });
+
+    it('should parse complex expressions', () => {
+        const str = `
+            def a = b.c[d][0].p + b.c[d][1].p;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, `var a = add(b.c[d][0].p, b.c[d][1].p);`);
+    });
+
+    it('should parse negative numbers', () => {
+        const str = `
+            if (b.c.d.tir.indexOf(e.f) == -1) {
+
+            }
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, `if (b.c.d.tir.indexOf(e.f) == -1) { }`);
+    });
+
+    it('should parse operators and assign result when type unkwnown', () => {
+        const str = `
+            a.b.c.d = constants.steps[a.b.c.e + 1] - a.b.c.f.size();
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, `a.b.c.d = subtract(constants.steps[a.b.c.e + 1], a.b.c.f.length);`);
+    });
+
     it('should parse a variable which is a string', () => {
         const str = 'def myvar = "hello";\n';
         const analyser = new Analyser(str);
@@ -589,7 +677,8 @@ describe('An Analyser', () => {
             def a =  [1, 2, 3];
             a.sort { a, b -> a - b }
 
-            return a;`;
+            return a;
+        `;
 
         const analyser = new Analyser(str);
         const result = analyser.parse();
@@ -598,13 +687,14 @@ describe('An Analyser', () => {
 
     it('should parse a native function on array with custom parameters', () => {
         const str = `
-        def a =  [1, 2, 3];
-        def b = 0;
-        a.eachWithIndex { value, index ->
-            b = value;
-        };
+            def a =  [1, 2, 3];
+            def b = 0;
+            a.eachWithIndex { value, index ->
+                b = value;
+            };
 
-        return b;`;
+            return b;
+        `;
 
         const analyser = new Analyser(str);
         const result = analyser.parse();

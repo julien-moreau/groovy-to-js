@@ -327,9 +327,12 @@ export default class Tokenizer {
                         this.forward();
                     }
 
+                    // Pointer ?
                     if (this.currentOperator === '->') {
                         this.currentToken = TokenType.POINTER;
-                    } else if (this.currentOperator === '//' || this.currentOperator === '/*') {
+                    }
+                    // Comment ?
+                    else if (this.currentOperator === '//' || this.currentOperator === '/*') {
                         const multiline = this.currentOperator === '/*';
                         this.currentToken = TokenType.COMMENT;
                         this.currentComment = this.currentOperator;
@@ -353,6 +356,19 @@ export default class Tokenizer {
                         }
 
                         this.lastString = this.currentComment;
+                    }
+                    // Negavive number ?
+                    else if (this.isDigit.test(c)) {
+                        this.currentToken = TokenType.NUMBER;
+                        this.currentNumber = this.currentOperator + c;
+                        this.forward();
+
+                        while (!this.isEnd() && (this.isDigit.test((c = this.peek())) || c === '.')) {
+                            this.currentNumber += c;
+                            this.forward();
+                        }
+
+                        this.lastString = this.currentNumber;
                     }
                 }
                 // Accessor

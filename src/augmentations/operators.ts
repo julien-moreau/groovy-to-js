@@ -3,14 +3,17 @@
  * @param a the source array
  * @param b the array/number to remove from "a"
  */
-export function subtract (a: number[], b: number | number[]): number[] {
+export function subtract (a: number | number[], b: number | number[]): number | number[] {
+    if (typeof a === 'number' && typeof b === 'number')
+        return a - b;
+    
     b = Array.isArray(b) ? b : [b];
 
     b.forEach(v => {
         let index: number;
 
-        while ((index = a.indexOf(v)) !== -1)
-            a.splice(index, 1);
+        while ((index = (<number[]> a).indexOf(v)) !== -1)
+            (<number[]> a).splice(index, 1);
     });
 
     return a;
@@ -21,9 +24,12 @@ export function subtract (a: number[], b: number | number[]): number[] {
  * @param a the source array
  * @param b the target array/number to add to "a"
  */
-export function add (a: number[], b: number | number[]): number[] {
+export function add (a: number | number[], b: number | number[]): number | number[] {
+    if (typeof a === 'number' && typeof b === 'number')
+        return a + b;
+
     b = Array.isArray(b) ? b : [b];
-    b.forEach(v => a.push(v));
+    b.forEach(v => (<number[]> a).push(v));
 
     return a;
 }

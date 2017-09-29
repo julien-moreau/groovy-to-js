@@ -36,6 +36,18 @@ const functions = {
         'unique': {
             name: 'unique',
             returns: VariableType.ARRAY
+        },
+        'intersect': {
+            name: 'intersect',
+            returns: VariableType.ARRAY
+        },
+        'take': {
+            name: 'take',
+            returns: VariableType.ARRAY
+        },
+        'indexOf': {
+            name: 'indexOf',
+            returns: VariableType.NUMBER
         }
     },
     map: {

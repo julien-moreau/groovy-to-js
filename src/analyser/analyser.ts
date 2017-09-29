@@ -161,10 +161,12 @@ export default class Analyser {
             if (right[right.length - 1] === '.' && (right = <string> this.tokenizer.matchIdentifier())) {
                 result.variable = new Variable(scope, right, VariableType.FUNCTION);
                 result.str += `${right}(${number.substr(0, number.length - 1)}, ${this.expression(scope).str})`;
+                result.variable.remove();
             }
             else {
                 result.variable = new Variable(scope, number, VariableType.NUMBER);
                 result.str = this.operators(scope, result.variable);
+                result.variable.remove();
             }
         }
         // String ?
@@ -208,7 +210,7 @@ export default class Analyser {
             result.variable.remove();
 
             // Array accessor ?
-            if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
+            while (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
                 result.str += this.array(scope).str;
                 result.variable.name = result.str;
                 result.variable.type = VariableType.ANY;
@@ -323,6 +325,7 @@ export default class Analyser {
             variable = Variable.find(scope, v => v.name === prev);
             if (!variable) {
                 //throw new Error(`Variable named "${prev}" was not declared`);
+                variable = new Variable(scope, prev, VariableType.ANY);
             }
         }
 
@@ -335,7 +338,7 @@ export default class Analyser {
             else
                 variable.type = expr.variable.type;
 
-            accessor = `${accessor} = ${expr.str}`;
+            accessor = `${accessor} = ${this.operators(scope, expr.variable)}`;
             expr.variable.remove(); // Remove the temp variable of expr
 
             if (this.tokenizer.match(TokenType.INSTRUCTION_END))
@@ -348,12 +351,14 @@ export default class Analyser {
         else {
             let fn = 
                 variable.type === VariableType.ARRAY ? functions.array[next] :
-                variable.type === VariableType.MAP ? functions.map[next] : null;
+                variable.type === VariableType.MAP ? functions.map[next] :
+                variable.type === VariableType.ANY ? functions.array[next] || functions.map[next] : null;
 
             // Property (.length, etc.) ?
             if (!fn) {
                 let fn = 
-                    variable.type === VariableType.ARRAY ? properties.array[next] : null;
+                    variable.type === VariableType.ARRAY ? properties.array[next] :
+                    variable.type === VariableType.ANY ? properties.array[next] : null;
 
                 variable = new Variable(scope, '', variable.type);
                 variable.remove();
