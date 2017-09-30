@@ -73,6 +73,10 @@ export default class Analyser {
             else if (this.tokenizer.matchIdentifier('return')) {
                 str += `return ${this.expression(scope).str}`;
             }
+            // Switch
+            else if (this.tokenizer.matchIdentifier('switch')) {
+                str += `switch ${this.parse(scope)}`;
+            }
             // Other
             else {
                 str += `${this.expression(scope).str} `;

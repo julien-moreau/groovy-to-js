@@ -901,6 +901,18 @@ describe('An Analyser', () => {
         assertResult(result, `var a = {}; a['fn'] = function(p) { console.log(p); }; a.fn(1);`);
     });
 
+    it('should parse a switch case', () => {
+        const str = `
+            def a = 0;
+            switch (a) {
+                case 0: break;
+            }
+        `;
+
+        const result = Analyser.convert(str);
+        assertResult(result, 'var a = 0; switch (a) { case 0: break; }');
+    });
+
     it('should call global functions without parenthesis', () => {
         const str = `
             def a = 1;

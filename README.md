@@ -14,6 +14,7 @@ Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 * Provide more functions to dictionnary
 
 # Not supported
+* Class definitions
 * array[index < 0]
 
 # Using the converter
