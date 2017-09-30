@@ -7,16 +7,17 @@ export function subtract (a: number | number[], b: number | number[]): number |
     if (typeof a === 'number' && typeof b === 'number')
         return a - b;
     
-    b = Array.isArray(b) ? b : [b];
+    const result = (<number[]> a).slice(0);
 
+    b = Array.isArray(b) ? b : [b];
     b.forEach(v => {
         let index: number;
 
-        while ((index = (<number[]> a).indexOf(v)) !== -1)
-            (<number[]> a).splice(index, 1);
+        while ((index = result.indexOf(v)) !== -1)
+            result.splice(index, 1);
     });
 
-    return a;
+    return result;
 }
 
 /**
@@ -28,10 +29,12 @@ export function add (a: number | number[], b: number | number[]): number | numbe
     if (typeof a === 'number' && typeof b === 'number')
         return a + b;
 
-    b = Array.isArray(b) ? b : [b];
-    b.forEach(v => (<number[]> a).push(v));
+    const result = (<number[]> a).slice(0);
 
-    return a;
+    b = Array.isArray(b) ? b : [b];
+    b.forEach(v => result.push(v));
+
+    return result;
 }
 
 /**
@@ -39,14 +42,19 @@ export function add (a: number | number[], b: number | number[]): number | numbe
  * @param a the source array
  * @param b how many times to add "a" into "a"
  */
-export function multiply (a: number[], b: number | number[]): number[] {
+export function multiply (a: number | number[], b: number | number[]): number | number[] {
+    if (typeof a === 'number' && typeof b === 'number')
+        return a * b;
+
+    const result = (<number[]> a).slice(0);
+
     b = Array.isArray(b) ? b : [b];
     if (b.length > 1)
         throw new Error('Cannot multiply two arrays. Right array must be of length 1 or be just a number.');
 
     b.forEach(v => {
-        a.forEach(v => a.push(v));
+        result.forEach(v => result.push(v));
     });
 
-    return a;
+    return result;
 }
