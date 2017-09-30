@@ -7,7 +7,7 @@ const operators = {
     '+=': 'add',
     '*': 'multiply',
     '*=': 'multiply',
-    '<<': 'add'
+    '<<': 'insert'
 };
 
 const keywords = {

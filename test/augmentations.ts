@@ -109,6 +109,41 @@ describe('Augmentations', () => {
     });
 
     /**
+     * Insert
+     */
+    it('should insert two numbers', () => {
+        const a = 2;
+        const b = 1;
+
+        assert(augmentations.insert(a, b) === 4);
+    });
+
+    it('should insert a number to an array', () => {
+        const a = [1, 2];
+        const result = <number[]> augmentations.insert(a, 3);
+        
+        assert(a.length === 2);
+        assert(result.length === 3);
+
+        assert(result[0] === 1);
+        assert(result[1] === 2);
+        assert(result[2] === 3);
+    });
+
+    it('should insert an array to an array', () => {
+        const a = [1, 2];
+        const result = <number[]> augmentations.insert(a, [3, 4]);
+        
+        assert(a.length === 2);
+        assert(result.length === 4);
+
+        assert(result[0] === 1);
+        assert(result[1] === 2);
+        assert(result[2] === 3);
+        assert(result[3] === 4);
+    });
+
+    /**
      * Times
      */
 
@@ -149,6 +184,7 @@ describe('Augmentations', () => {
         assert(obj.add);
         assert(obj.subtract);
         assert(obj.multiply);
+        assert(obj.insert);
 
         assert(obj.range);
         assert(obj.times);

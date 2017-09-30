@@ -74,7 +74,7 @@ describe('An Analyser', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
 
-        assertResult(result, 'var myvar = [1,2,3]; myvar = add(myvar, 1);');
+        assertResult(result, 'var myvar = [1,2,3]; myvar = insert(myvar, 1);');
     });
 
     it('should a variable definition which is a map', () => {

@@ -58,3 +58,14 @@ export function multiply (a: number | number[], b: number | number[]): number | 
 
     return result;
 }
+
+export function insert (a: number | number[], b: number | number[]): number | number[] {
+    if (typeof a === 'number' && typeof b === 'number')
+        return a << b;
+
+    const result = (<number[]> a).slice(0);
+    b = Array.isArray(b) ? b : [b];
+    
+    b.forEach(v => result.push(v));
+    return result;
+}
