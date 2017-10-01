@@ -54,6 +54,17 @@ describe('An Analyser', () => {
         assert(analyser.scope.variables[1].type === VariableType.NUMBER);
     });
 
+    it('should avoid type casting', () => {
+        const str = `
+            def myvar1 = 0;
+            def myvar2 = (int)myvar1;\n`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, `var myvar1 = 0;var myvar2 = myvar1;`);
+    });
+
     it('should a variable definition which is an array', () => {
         const str = 'def myvar = [1, 2, 3];\n';
         const analyser = new Analyser(str);
@@ -422,6 +433,42 @@ describe('An Analyser', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = 0;for (var i in range(0, 19)){a ++;}`);
+    });
+
+    it('should parse a for loop with a range and operators', () => {
+        const str = `
+            def a = 0;
+            for (def i in 0..19 + 1) {
+                a++;
+            }\n`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = 0;for (var i in range(0, 19 + 1)){a ++;}`);
+    });
+
+    it('should parse a for loop with a string', () => {
+        const str = `
+            def a = 0;
+            for (def i in "hello") {
+                a++;
+            }\n`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = 0;for (var i in "hello"){a ++;}`);
+    });
+
+    it('should parse a for loop with a variable which is a string', () => {
+        const str = `
+            def a = "hello";
+            for (def i in a) {
+                
+            }\n`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = "hello";for (var i in a){ }`);
     });
 
     it('should parse a variable as a range', () => {
@@ -947,5 +994,15 @@ describe('An Analyser', () => {
 
         const result = Analyser.convert(str);
         assertResult(result, 'var a = [1, 2, 3]; return a.unique(false).length;');
+    });
+
+    it('should throw when trying to parse a class (not supported)', () => {
+        const str = `
+            class A {
+                String b;
+            }
+        `;
+
+        assert.throws(() => Analyser.convert(str));
     });
 });

@@ -14,6 +14,16 @@ const keywords = {
     'def': 'var'
 };
 
+const types = [
+    'String',
+    'byte',
+    'char',
+    'short',
+    'int',
+    'long',
+    'BigInteger'
+];
+
 const functions = {
     global: {
         'println': 'console.log',
@@ -74,5 +84,6 @@ export {
     operators,
     keywords,
     functions,
-    properties
+    properties,
+    types
 }

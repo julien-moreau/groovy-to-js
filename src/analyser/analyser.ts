@@ -4,7 +4,7 @@ import { TokenType } from '../tokenizer/token-type';
 import Scope from './scope';
 import Variable, { VariableType } from './scope-variable';
 
-import { operators, keywords, functions, properties } from './dictionnary';
+import { operators, keywords, functions, properties, types } from './dictionnary';
 
 import * as beautifier from 'js-beautify';
 
@@ -92,7 +92,7 @@ export default class Analyser {
      * @param name 
      */
     protected expression (scope: Scope, previous?: string): { str: string, variable: Variable } {
-        const result = {
+        let result = {
             str: '',
             variable: null
         };
@@ -112,10 +112,12 @@ export default class Analyser {
                 if (this.tokenizer.match(TokenType.ASSIGN)) {
                     const expr = this.expression(scope, variableName);
                     
-                    result.variable.type = expr.variable.type;
-                    result.str = `var ${variableName} = ${this.operators(scope, expr.variable)}`;
+                    if (expr.variable) {
+                        result.variable.type = expr.variable.type;
+                        result.str = `var ${variableName} = ${this.operators(scope, expr.variable)}`;
 
-                    expr.variable.remove(); // Remove the temp variable
+                        expr.variable.remove(); // Remove the temp variable
+                    }
                 }
                 else
                     result.str = `var ${variableName}`;
@@ -129,8 +131,12 @@ export default class Analyser {
             }
             // Not declaration
             else {
+                // Type casting ?
+                if (types.indexOf(right) !== -1) {
+                    result.str = '';
+                }
                 // Method call ?
-                if (functions.global[right]) {
+                else if (functions.global[right]) {
                     const fn = functions.global[right];
                     result.str = `${fn}(${this.expression(scope, previous).str})`;
                 }
@@ -249,6 +255,9 @@ export default class Analyser {
             }
 
             result.str += ')';
+
+            if (result.str === '()')
+                result = this.expression(scope, previous);
         }
         // Assign ? (=)
         else if (this.tokenizer.match(TokenType.ASSIGN)) {
