@@ -110,11 +110,15 @@ export default class Analyser {
                 result.variable = new Variable(scope, variableName, VariableType.ANY);
 
                 if (this.tokenizer.match(TokenType.ASSIGN)) {
-                    const expr = this.expression(scope, variableName);
+                    let ctor = this.tokenizer.matchIdentifier('new');
+                    let expr = this.expression(scope, variableName);
                     
+                    if (expr.str === '()')
+                        expr = this.expression(scope, variableName);
+
                     if (expr.variable) {
                         result.variable.type = expr.variable.type;
-                        result.str = `var ${variableName} = ${this.operators(scope, expr.variable)}`;
+                        result.str = `var ${variableName} = ${ctor ? 'new' : ''} ${this.operators(scope, expr.variable)}`;
 
                         expr.variable.remove(); // Remove the temp variable
                     }
@@ -258,8 +262,10 @@ export default class Analyser {
 
             result.str += ')';
 
+            /*
             if (result.str === '()')
                 result = this.expression(scope, previous);
+            */
         }
         // Assign ? (=)
         else if (this.tokenizer.match(TokenType.ASSIGN)) {
@@ -333,6 +339,8 @@ export default class Analyser {
             throw new Error('A class must have a name');
         }
 
+        result.variable.name = name;
+
         // Class scope
         const classScope = new Scope(scope);
 
@@ -343,54 +351,62 @@ export default class Analyser {
         if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
             while (!this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
                 // Member definition ?
-                if ((right = <string> this.tokenizer.matchIdentifier()) && types.indexOf(right) !== -1) {
+                if ((right = <string> this.tokenizer.matchIdentifier()) && (types.indexOf(right) !== -1 || right === name)) {
                     member = right;
                 }
                 // Just expression
                 else {
                     // Member declaration ?
                     if (member) {
-                        let definition = `this.${right}`;
-                        member = null;
+                        if (!right) { 
+                            // Constructor ?
+                            let expr = this.expression(classScope);
+                            parameters = expr.str;
 
-                        // Assign value directly ?
-                        if (this.tokenizer.match(TokenType.ASSIGN)) {
-                            const expr = this.expression(classScope);
-                            result.ctor += `${definition} = ${expr.str}`;
+                            // Code
+                            expr = this.expression(classScope);
+                            
+                            const first = expr.str.indexOf('{');
+                            const last = expr.str.lastIndexOf('}');
+                            result.ctor += expr.str.substring(first + 1, last - 1);
                         }
-                        // Expression ?
                         else {
-                            // Method without arguments ?
-                            const expr1 = this.expression(classScope);
-                            if (expr1.variable && expr1.variable.type === VariableType.FUNCTION) {
-                                result.prototype = `${result.prototype} ${name}.prototype.${right} = ${expr1.str}`;
+                            let definition = `this.${right}`;
+
+                            // Assign value directly ?
+                            if (this.tokenizer.match(TokenType.ASSIGN)) {
+                                const expr = this.expression(classScope);
+                                result.ctor += `${definition} = ${expr.str}`;
                             }
-                            // Method with arguments ?
-                            else if (expr1.str.match(/\((.*)\)/)) {
-                                const split = expr1.str.substring(1, expr1.str.length - 1).replace(/var/g, '').split(',');
-                                const expr2 = this.expression(classScope);
-                                result.prototype = `${result.prototype} ${name}.prototype.${right} = ${expr2.str.replace(/it/, split.join(','))}`;
+                            // Expression ?
+                            else {
+                                const variable = new Variable(scope, `${name}.${right}`, VariableType.ANY);
+                                functions.class[right] = {
+                                    name: right,
+                                    returns: VariableType.ANY
+                                };
+
+                                // Method without arguments ?
+                                const expr1 = this.expression(classScope);
+                                if (expr1.variable && expr1.variable.type === VariableType.FUNCTION) {
+                                    result.prototype = `${result.prototype} ${name}.prototype.${right} = ${expr1.str}`;
+                                }
+                                // Method with arguments ?
+                                else if (expr1.str.match(/\((.*)\)/)) {
+                                    const split = expr1.str.substring(1, expr1.str.length - 1).replace(/var/g, '').split(',');
+                                    const expr2 = this.expression(classScope);
+                                    result.prototype = `${result.prototype} ${name}.prototype.${right} = ${expr2.str.replace(/it/, split.join(','))}`;
+                                }
                             }
                         }
-                    }
-                    // Constructor ?
-                    else if (right && right === name) {
-                        // Arguments
-                        let expr = this.expression(classScope);
-                        parameters = expr.str;
 
-                        // Code
-                        expr = this.expression(classScope);
-                        
-                        const first = expr.str.indexOf('{');
-                        const last = expr.str.lastIndexOf('}');
-                        result.ctor += expr.str.substring(first + 1, last - 1);
+                        member = null;
                     }
                     // Def
                     else if (right && right === 'def') {
                         continue;
                     }
-                    // Expression
+                    // Ignore token ?
                     else {
                         const expr = this.expression(classScope);
                         result.ctor += expr.str;
@@ -460,7 +476,7 @@ export default class Analyser {
             let fn = 
                 variable.type === VariableType.ARRAY ? functions.array[next] :
                 variable.type === VariableType.MAP ? functions.map[next] :
-                variable.type === VariableType.ANY ? functions.array[next] || functions.map[next] : null;
+                (variable.type === VariableType.ANY || variable.type === VariableType.CLASS) ? functions.array[next] || functions.map[next] || functions.class[next] : null;
 
             // Property (.length, etc.) ?
             if (!fn) {
@@ -482,6 +498,19 @@ export default class Analyser {
                         this.tokenizer.getNextToken();
                 }
 
+                // Parenthesized call ?
+                if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
+                    accessor += '(';
+                    while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
+                        const expr = this.expression(scope);
+                        if (expr.variable)
+                            accessor += this.operators(scope, expr.variable);
+                        else
+                            accessor += expr.str;
+                    }
+                    accessor += ')';
+                }
+
                 variable.name = accessor;
             }
             // Method found
@@ -492,7 +521,7 @@ export default class Analyser {
                     variable = new Variable(scope, accessor, VariableType.VOID);
                 }
                 // Function which returns a specific type ?
-                else if (fn.returns) {
+                else if (fn.returns !== undefined) {
                     accessor = `${prev}.${fn.name}${this.expression(scope).str}`;
                     
                     variable = new Variable(scope, accessor, fn.returns);

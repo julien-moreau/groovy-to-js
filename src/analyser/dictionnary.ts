@@ -77,6 +77,9 @@ const functions = {
             name: 'times',
             parameters: ['it']
         }
+    },
+    class: {
+        // To be populated by analyser
     }
 };
 

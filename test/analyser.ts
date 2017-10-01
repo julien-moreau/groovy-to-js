@@ -6,8 +6,12 @@ import * as assert from 'assert';
 
 describe('An Analyser', () => {
     const assertResult = (result: string, expected: string): void => {
-        result = result.replace(/[\n\t ]/g, '');
-        expected = expected.replace(/[\n\t ]/g, '');
+        result = result.replace(/[\n\r\t\0 ]/g, '');
+        expected = expected.replace(/[\n\r\t\0 ]/g, '');
+        
+        // Remove 0 width space characters
+        result = result.replace(/[\u200B-\u200D\uFEFF]/g, '');
+        expected = expected.replace(/[\u200B-\u200D\uFEFF]/g, '');
 
         assert(result === expected);
     };
@@ -986,6 +990,17 @@ describe('An Analyser', () => {
         assertResult(result, `var a =  1; console.log(("coucou")); console.log((0)); console.log((a));`);
     });
 
+    it('should call global functions with parenthesis with complex expression in it', () => {
+        const str = `
+            def a = [1, 2, 3];
+            println a.take(0).unique(true);
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1, 2, 3]; console.log(a.take(0).unique(true));`);
+    });
+
     it('should set property "length" after method call', () => {
         const str = `
             def a = [1, 2, 3];
@@ -1118,7 +1133,7 @@ describe('An Analyser', () => {
                 console.log("hello")
             }
 
-            A.prototype.toString = function (it) {
+            A.prototype.toString = function () {
                 return "hello"
             }
         `);
@@ -1140,7 +1155,7 @@ describe('An Analyser', () => {
 
             }
 
-            A.prototype.doSomething = function (it) {
+            A.prototype.doSomething = function () {
                 return 0;
             }
         `);
@@ -1172,28 +1187,40 @@ describe('An Analyser', () => {
         const str = `
             class A {
                 String str = "hello";
+                def String str2 = "hello2";
+
                 def A (String str) { println "hello"; }
+
                 String toString () { return "hello"; }
 
-                void doSomething (def a, def b) {
+                int doSomething (def a, def b) {
                     return a + b;
                 }
 
-                void doSomething2 (String a, String b) {
+                int doSomething2 (String a, String b) {
                     return a + b;
                 }
+
+                A fluent() {
+                    return this;
+                }
             }
-        `;
+
+            def a = new A("hello");
+            println a.toString();
+            println a.doSomething(1, 2);
+            println a.fluent().doSomething(1, 2);​`;
 
         const result = Analyser.convert(str);
 
         assertResult(result, `
             function A(str) {
                 this.str = "hello";
+                this.str2 = "hello2";
                 console.log("hello");
             }
 
-            A.prototype.toString = function (it) {
+            A.prototype.toString = function () {
                 return "hello";
             }
 
@@ -1204,6 +1231,15 @@ describe('An Analyser', () => {
             A.prototype.doSomething2 = function (a, b) {
                 return add(a, b);
             }
+
+            A.prototype.fluent = function () {
+                return this;
+            }
+
+            var a = new A("hello");
+            console.log(a.toString());
+            console.log(a.doSomething(1, 2));
+            console.log(a.fluent().doSomething(1, 2));
         `);
     });
 });
