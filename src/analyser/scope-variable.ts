@@ -7,7 +7,8 @@ export enum VariableType {
     MAP,
     STRING,
     FUNCTION,
-    VOID
+    VOID,
+    CLASS
 }
 
 export default class Variable {

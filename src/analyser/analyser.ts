@@ -127,7 +127,9 @@ export default class Analyser {
             }
             // Class declaration ?
             else if (right === 'class') {
-                throw new Error('Not implemented yet (class)');
+                const classResult = this.class(scope);
+                result.str = classResult.ctor + classResult.prototype;
+                result.variable = classResult.variable;
             }
             // Not declaration
             else {
@@ -297,6 +299,10 @@ export default class Analyser {
 
                 str = '';
             }
+            // Return statement ?
+            else if (this.tokenizer.matchIdentifier('return')) {
+                str += 'return ';
+            }
             // Other ?
             else {
                 const expr = this.expression(newScope);
@@ -307,6 +313,95 @@ export default class Analyser {
         return `function (${params || 'it'}) {
             ${str}
         }`;
+    }
+
+    /**
+     * Parses a class
+     */
+    protected class (scope: Scope): { ctor: string, prototype: string, variable: Variable } {
+        const result = {
+            ctor: '',
+            prototype: '',
+            variable: new Variable(scope, '', VariableType.CLASS)
+        }
+
+        // Class name
+        let name = '';
+        let parameters: string = null;
+
+        if (!(name = <string> this.tokenizer.matchIdentifier())) {
+            throw new Error('A class must have a name');
+        }
+
+        // Class scope
+        const classScope = new Scope(scope);
+
+        // Defining now ?
+        let member: string = null;
+        let right = '';
+
+        if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
+            while (!this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
+                // Member definition ?
+                if ((right = <string> this.tokenizer.matchIdentifier()) && types.indexOf(right) !== -1) {
+                    member = right;
+                }
+                // Just expression
+                else {
+                    // Member declaration ?
+                    if (member) {
+                        let definition = `this.${right}`;
+                        member = null;
+
+                        // Assign value directly ?
+                        if (this.tokenizer.match(TokenType.ASSIGN)) {
+                            const expr = this.expression(classScope);
+                            result.ctor += `${definition} = ${expr.str}`;
+                        }
+                        // Expression ?
+                        else {
+                            // Method without arguments ?
+                            const expr1 = this.expression(classScope);
+                            if (expr1.variable && expr1.variable.type === VariableType.FUNCTION) {
+                                result.prototype = `${result.prototype} ${name}.prototype.${right} = ${expr1.str}`;
+                            }
+                            // Method with arguments ?
+                            else if (expr1.str.match(/\((.*)\)/)) {
+                                const split = expr1.str.substring(1, expr1.str.length - 1).replace(/var/g, '').split(',');
+                                const expr2 = this.expression(classScope);
+                                result.prototype = `${result.prototype} ${name}.prototype.${right} = ${expr2.str.replace(/it/, split.join(','))}`;
+                            }
+                        }
+                    }
+                    // Constructor ?
+                    else if (right && right === name) {
+                        // Arguments
+                        let expr = this.expression(classScope);
+                        parameters = expr.str;
+
+                        // Code
+                        expr = this.expression(classScope);
+                        
+                        const first = expr.str.indexOf('{');
+                        const last = expr.str.lastIndexOf('}');
+                        result.ctor += expr.str.substring(first + 1, last - 1);
+                    }
+                    // Def
+                    else if (right && right === 'def') {
+                        continue;
+                    }
+                    // Expression
+                    else {
+                        const expr = this.expression(classScope);
+                        result.ctor += expr.str;
+                    }
+                }
+            }
+        }
+
+        result.ctor = `function ${name}${parameters || '()'} {${result.ctor}}`;
+
+        return result;
     }
 
     /**

@@ -15,6 +15,7 @@ const keywords = {
 };
 
 const types = [
+    'void',
     'String',
     'byte',
     'char',
@@ -22,6 +23,14 @@ const types = [
     'int',
     'long',
     'BigInteger'
+];
+
+const accessors = [
+    'public',
+    'private',
+    'protected',
+    'static',
+    'final'
 ];
 
 const functions = {

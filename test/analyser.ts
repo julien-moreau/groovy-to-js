@@ -996,13 +996,214 @@ describe('An Analyser', () => {
         assertResult(result, 'var a = [1, 2, 3]; return a.unique(false).length;');
     });
 
-    it('should throw when trying to parse a class (not supported)', () => {
+    it('should parse an empty class', () => {
         const str = `
             class A {
-                String b;
+                
             }
         `;
 
-        assert.throws(() => Analyser.convert(str));
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'function A() { }');
+    });
+
+    it('should parse a class with a member in it', () => {
+        const str = `
+            class A {
+                String str
+            }
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'function A() {  }');
+    });
+
+    it('should parse a class with a member in it which as a value', () => {
+        const str = `
+            class A {
+                String str = "hello"
+            }
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'function A() { this.str = "hello" }');
+    });
+
+    it('should parse a class wich has an empty constructor', () => {
+        const str = `
+            class A {
+                A (String str) { }
+            }
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'function A(str) { }');
+    });
+
+    it('should parse a class wich has an empty constructor with a def', () => {
+        const str = `
+            class A {
+                def A (String str) { }
+            }
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'function A(str) { }');
+    });
+
+    it('should parse a class wich has a constructor', () => {
+        const str = `
+            class A {
+                A (String str) { println "hello" }
+            }
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'function A(str) { console.log("hello") }');
+    });
+
+    it('should parse a class wich has a constructor with a def', () => {
+        const str = `
+            class A {
+                def A (String str) { println "hello" }
+            }
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'function A(str) { console.log("hello") }');
+    });
+
+    it('should parse a class which has a construtor and members', () => {
+        const str = `
+            class A {
+                String str = "hello"
+                def A (String str) { println "hello" }
+            }
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+
+        assertResult(result, 'function A(str) { this.str = "hello" console.log("hello") }');
+    });
+
+    it('should parse a class with a method in it', () => {
+        const str = `
+            class A {
+                String str = "hello"
+                def A (String str) { println "hello" }
+                String toString () { return "hello" }
+            }
+        `;
+
+        const result = Analyser.convert(str);
+
+        assertResult(result, `
+            function A(str) {
+                this.str = "hello"
+                console.log("hello")
+            }
+
+            A.prototype.toString = function (it) {
+                return "hello"
+            }
+        `);
+    });
+
+    it('should parse a class with a method in it', () => {
+        const str = `
+            class A {
+                void doSomething () {
+                    return 0;
+                }
+            }
+        `;
+
+        const result = Analyser.convert(str);
+
+        assertResult(result, `
+            function A() {
+
+            }
+
+            A.prototype.doSomething = function (it) {
+                return 0;
+            }
+        `);
+    });
+
+    it('should parse a class with a method in it', () => {
+        const str = `
+            class A {
+                void doSomething (def a, def b) {
+                    return a + b;
+                }
+            }
+        `;
+
+        const result = Analyser.convert(str);
+
+        assertResult(result, `
+            function A() {
+
+            }
+
+            A.prototype.doSomething = function (a, b) {
+                return add(a, b);
+            }
+        `);
+    });
+
+    it('should parse a class with a method in it', () => {
+        const str = `
+            class A {
+                String str = "hello";
+                def A (String str) { println "hello"; }
+                String toString () { return "hello"; }
+
+                void doSomething (def a, def b) {
+                    return a + b;
+                }
+
+                void doSomething2 (String a, String b) {
+                    return a + b;
+                }
+            }
+        `;
+
+        const result = Analyser.convert(str);
+
+        assertResult(result, `
+            function A(str) {
+                this.str = "hello";
+                console.log("hello");
+            }
+
+            A.prototype.toString = function (it) {
+                return "hello";
+            }
+
+            A.prototype.doSomething = function (a, b) {
+                return add(a, b);
+            }
+
+            A.prototype.doSomething2 = function (a, b) {
+                return add(a, b);
+            }
+        `);
     });
 });

@@ -4,7 +4,7 @@
  * @param b the array/number to remove from "a"
  */
 export function subtract (a: number | number[], b: number | number[]): number | number[] {
-    if (typeof a === 'number' && typeof b === 'number')
+    if (!Array.isArray(a) && !Array.isArray(b))
         return a - b;
     
     const result = (<number[]> a).slice(0);
@@ -26,7 +26,7 @@ export function subtract (a: number | number[], b: number | number[]): number |
  * @param b the target array/number to add to "a"
  */
 export function add (a: number | number[], b: number | number[]): number | number[] {
-    if (typeof a === 'number' && typeof b === 'number')
+    if (!Array.isArray(a) && !Array.isArray(b))
         return a + b;
 
     const result = (<number[]> a).slice(0);
@@ -43,7 +43,7 @@ export function add (a: number | number[], b: number | number[]): number | numbe
  * @param b how many times to add "a" into "a"
  */
 export function multiply (a: number | number[], b: number | number[]): number | number[] {
-    if (typeof a === 'number' && typeof b === 'number')
+    if (!Array.isArray(a) && !Array.isArray(b))
         return a * b;
 
     const result = (<number[]> a).slice(0);
@@ -60,7 +60,7 @@ export function multiply (a: number | number[], b: number | number[]): number | 
 }
 
 export function insert (a: number | number[], b: number | number[]): number | number[] {
-    if (typeof a === 'number' && typeof b === 'number')
+    if (!Array.isArray(a) && !Array.isArray(b))
         return a << b;
 
     const result = (<number[]> a).slice(0);
