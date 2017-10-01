@@ -69,7 +69,7 @@ const functions = {
             parameters: ['it']
         }
     }
-}
+};
 
 const properties = {
     array: {
@@ -78,7 +78,7 @@ const properties = {
             returns: VariableType.NUMBER
         }
     }
-}
+};
 
 export {
     operators,
