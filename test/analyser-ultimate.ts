@@ -454,4 +454,36 @@ describe('A Complete Analyser', () => {
 
         assert(exec.length === 2);
     });
+
+    it('should execute a code which has a class', () => {
+        const str = `
+            class A {
+                String str;
+                
+                A () {
+                    this.str = "Hello world!";
+                }
+                
+                String toString () {
+                    return  this.str;
+                }
+
+                int doSomething (def a, def b) {
+                    return 2;
+                }
+            }
+
+            def a = new A();
+            return [
+                a: a.toString(),
+                b: a.doSomething(1, 2)
+            ];
+        `;
+
+        const result = Analyser.convert(str);
+        const exec = execute(result);
+
+        assert(exec.a === "Hello world!");
+        assert(exec.b === 2);
+    });
 });

@@ -135,6 +135,12 @@ export default class Analyser {
                 result.str = classResult.ctor + classResult.prototype;
                 result.variable = classResult.variable;
             }
+            // New instance ?
+            else if (right === 'new') {
+                const expr = this.expression(scope, previous);
+                result.str += `new ${expr.str}`;
+                result.variable = Variable.find(scope, v => v.name === expr.str);
+            }
             // Not declaration
             else {
                 // Type casting ?
@@ -430,7 +436,7 @@ export default class Analyser {
         if (accessor[accessor.length - 1] === '.') {
             let key = '';
             if ((key = this.tokenizer.matchString())) {
-                return { str: accessor.substr(0, this.accessor.length - 1) + `[${key}]`, variable: null };
+                return { str: accessor.substring(0, accessor.length - 1) + `[${key}]`, variable: null };
             }
         }
 
@@ -762,6 +768,7 @@ export default class Analyser {
         let variable: Variable = null;
         let identifier = '';
         let number = '';
+        let isKey = false;
 
         if (name)
             variable = new Variable(scope, `${name}.${key}`, VariableType.ANY);
@@ -774,7 +781,7 @@ export default class Analyser {
 
                 if (variable)
                     variable.type = array.type;
-            } else if ((identifier = <string> this.tokenizer.matchIdentifier())) {
+            } else if (isKey && (identifier = <string> this.tokenizer.matchIdentifier())) {
                 // This is a key
                 key = identifier;
 
@@ -782,14 +789,18 @@ export default class Analyser {
                     variable = new Variable(scope, `${name}.${key}`, VariableType.ANY);
                 
                 str += key;
+                isKey = false;
             } else if ((number = this.tokenizer.matchNumber())) {
                 if (variable)
                     variable.type = VariableType.NUMBER;
 
                 str += number;
+            } else if (this.tokenizer.match(TokenType.COMMA)) {
+                str += ',';
+                isKey = true;
             } else {
-                str += this.tokenizer.lastString;
-                this.tokenizer.getNextToken();
+                const expr = this.expression(scope);
+                str += expr.str;
             }
         }
 
