@@ -27,11 +27,13 @@ describe('A Variable', () => {
             nbr: 0,
             params: {
                 str2: 'hello'
-            }
+            },
+            fn: () => { },
+            undef: undefined
         };
 
         const scope = Variable.buildFrom(obj);
-        assert(scope.variables.length === 4);
+        assert(scope.variables.length === 5);
     });
 
     it('should throw an error giving a scope with an array', () => {

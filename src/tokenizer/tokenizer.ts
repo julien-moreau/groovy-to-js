@@ -197,8 +197,8 @@ export default class Tokenizer {
             case ',': return this.currentToken = TokenType.COMMA;
             case '{': return this.currentToken = TokenType.BRACKET_OPEN;
             case '}': return this.currentToken = TokenType.BRACKET_CLOSE;
+            case '\r':
             case '\n': this.currentLine++; return this.currentToken = TokenType.LINE_END;
-            case '\r': this.currentLine++; return this.currentToken = TokenType.LINE_END;
             case ':': return this.currentToken = TokenType.DESCRIPTOR;
             default: {
                 // Number or range

@@ -69,6 +69,50 @@ describe('An Analyser', () => {
         assertResult(result, `var myvar1 = 0;var myvar2 = myvar1;`);
     });
 
+    it('should throw an error when broken number (more than 2 dots) is used', () => {
+        const str = `
+            def m = [ a: 0...9 ];
+        `;
+
+        assert.throws(() => Analyser.convert(str));
+    });
+
+    it('should throw an error when broken accessor/range (more than 2 dots) is used', () => {
+        const str = `
+            def a = 0;
+            def b = 10;
+            def c = a...c;
+        `;
+
+        assert.throws(() => Analyser.convert(str));
+    });
+
+    it('should throw an error if the for keyword is badly used', () => {
+        const str = `
+            for = 1;
+        `;
+
+        assert.throws(() => Analyser.convert(str));
+    });
+
+    it('shoud throw when using triple equel === (or more)', () => {
+        const str = `
+            def a = 1 === 0;
+        `;
+
+        assert.throws(() => Analyser.convert(str));
+    });
+
+    it('should throw an error when declaring a class without name', () => {
+        const str = `
+            class {
+
+            }
+        `;
+
+        assert.throws(() => Analyser.convert(str));
+    });
+
     it('should a variable definition which is an array', () => {
         const str = 'def myvar = [1, 2, 3];\n';
         const analyser = new Analyser(str);
@@ -437,6 +481,17 @@ describe('An Analyser', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var a = 0;for (var i in range(0, 19)){a ++;}`);
+    });
+
+    it('should define a range which uses variables of the scope', () => {
+        const str = `
+            def a = 0;
+            def b = 10;
+            def c = a..b;
+        `;
+
+        const result = Analyser.convert(str);
+        assertResult(result, 'var a = 0; var b = 10; var c = range(a, b);');
     });
 
     it('should parse a for loop with a range and operators', () => {
