@@ -1007,6 +1007,19 @@ describe('An Analyser', () => {
         assertResult(result, `var a = {}; a['fn'] = function(p) { console.log(p); }; a.fn(1);`);
     });
 
+    it('should parse a loop in a function', () => {
+        const str = `
+            def fn = {
+                for (def i = 0; i < 1; i++) {
+                    println "hello";
+                }
+            };
+        `;
+
+        const result = Analyser.convert(str);
+        assertResult(result, 'var fn = function (it) { for (var i = 0; i < 1; i++) { console.log("hello"); } };');
+    });
+
     it('should parse a switch case', () => {
         const str = `
             def a = 0;

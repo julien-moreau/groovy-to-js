@@ -296,13 +296,25 @@ export default class Analyser {
     protected func (scope: Scope): string {
         let str = '';
         let params: string = null;
+        let bracketCount = 1;
 
         const newScope = new Scope(scope);
         const variable = new Variable(newScope, 'it', VariableType.ANY);
 
-        while (!this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
+        while (bracketCount > 0) {
+            // Brack close ?
+            if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
+                bracketCount++;
+                str += '{';
+            }
+            else if (this.tokenizer.match(TokenType.BRACKET_CLOSE)) {
+                bracketCount--;
+
+                if (bracketCount > 0)
+                    str += '}';
+            }
             // Pointer ? (then, params)
-            if (this.tokenizer.match(TokenType.POINTER)) {
+            else if (this.tokenizer.match(TokenType.POINTER)) {
                 params = str;
 
                 // Register variables in scope
