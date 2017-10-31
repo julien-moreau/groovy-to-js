@@ -8,13 +8,44 @@ describe('An Analyser', () => {
     const assertResult = (result: string, expected: string): void => {
         result = result.replace(/[\n\r\t\0 ]/g, '');
         expected = expected.replace(/[\n\r\t\0 ]/g, '');
-        
+
         // Remove 0 width space characters
         result = result.replace(/[\u200B-\u200D\uFEFF]/g, '');
         expected = expected.replace(/[\u200B-\u200D\uFEFF]/g, '');
 
         assert(result === expected);
     };
+
+    it('should parse a switch in a lambda method', () => {
+        const str = `
+            def a = ["1", "2"];
+            a.each {
+                switch (it) {
+                    case "1":
+                        doSomething();
+                        break;
+                    
+                    case "2":
+                        doSomething();
+                        break;
+                }
+            };
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = ["1", "2"];a.forEach(function (it) { switch (it) { case "1": doSomething(); break; case "2": doSomething(); break; }});`);
+    });
+
+    it('should parse a spaceshipt operator', () => {
+        const str = `
+            def a = 1 <=> 1;
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = spaceship(1, 1);`);
+    });
 
     it('should parse a variable definition', () => {
         const str = 'def myvar = 0;\n';
@@ -48,7 +79,7 @@ describe('An Analyser', () => {
         const analyser = new Analyser(str);
         const result = analyser.parse();
         assertResult(result, `var myvar1 = 0;var myvar2 = 1;`);
-        
+
         assert(analyser.scope.variables.length === 2);
 
         assert(analyser.scope.variables[0].name === 'myvar1');
@@ -724,9 +755,9 @@ describe('An Analyser', () => {
         def a = [1, 2, 3];
         a.add(0);`;
 
-    const analyser = new Analyser(str);
-    const result = analyser.parse();
-    assertResult(result, `var a = [1,2,3];a.push(0);`);
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];a.push(0);`);
     });
 
     it('should call a function with also parenthesis', () => {
@@ -736,6 +767,20 @@ describe('An Analyser', () => {
             a.each() {
                 b++;
             };
+        `;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = [1,2,3];var b = 0;a.forEach(function(it) { b++; });`);
+    });
+
+    it('should call a function with a lambda in parenthesis', () => {
+        const str = `
+            def a = [1, 2, 3];
+            def b = 0;
+            a.each({
+                b++;
+            });
         `;
 
         const analyser = new Analyser(str);
@@ -826,9 +871,9 @@ describe('An Analyser', () => {
                 a++;
             };`;
 
-    const analyser = new Analyser(str);
-    const result = analyser.parse();
-    assertResult(result, `var a = 0;times(3, function (it) { a++; });`);
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = 0;times(3, function (it) { a++; });`);
     });
 
     it('should parse a native function on array just after definition with multiple parameters', () => {

@@ -75,7 +75,7 @@ export default class Analyser {
             }
             // Switch
             else if (this.tokenizer.matchIdentifier('switch')) {
-                str += `switch ${this.parse(scope)}`;
+                str += `switch ${this.expression(scope).str}`;
             }
             // Other
             else {
@@ -83,6 +83,12 @@ export default class Analyser {
             }
         }
 
+        // TEMPORARY REPLACE SPACESHIP WITH REGEXP
+        // UNTIL WE GET A BETTER "operators()" FUNCTION
+        const ITEM = '[a-zA-Z0-9_\-]*';
+        const GET_ITEM = `\\s*(${ITEM})\\s*`;
+        const ss = new RegExp(`${GET_ITEM}<=>${GET_ITEM}`, 'g');
+        str = str.replace(ss, 'spaceship($1, $2)');
         return str;
     }
 
@@ -323,6 +329,10 @@ export default class Analyser {
 
                 str = '';
             }
+            // Switch
+            else if (this.tokenizer.matchIdentifier('switch')) {
+                str += `switch ${this.expression(newScope).str}`;
+            }
             // Return statement ?
             else if (this.tokenizer.matchIdentifier('return')) {
                 str += 'return ';
@@ -553,13 +563,19 @@ export default class Analyser {
                 } else {
                     // Avoid parenthesis
                     if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
-                        while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE))
-                            this.tokenizer.getNextToken();
+                        if (!(this.tokenizer.currentToken === TokenType.BRACKET_OPEN)) {
+                            while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE))
+                                this.tokenizer.getNextToken();
+                        }
                     }
 
                     let hasArguments = this.tokenizer.currentToken === TokenType.BRACKET_OPEN;
                     accessor = `${prev}.${fn.name}(${hasArguments ? this.expression(scope).str : ''})`;
                     variable = new Variable(scope, accessor, VariableType.VOID);
+
+                    // Avoid last parenthesis
+                    if (this.tokenizer.currentToken === TokenType.PARENTHESIS_CLOSE)
+                        this.tokenizer.getNextToken();
                 }
             }
 
