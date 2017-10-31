@@ -268,9 +268,13 @@ export default class Tokenizer {
                     this.currentToken = TokenType.STRING;
                     this.currentString = c;
 
-                    while (!this.isEnd() && (c = this.peek()) !== '"' && c !== "'") {
+                    let lastChar = c;
+
+                    while (!this.isEnd() && ((c = this.peek()) !== '"' && c !== "'" || lastChar === '\\')) {
                         this.currentString += c;
                         this.forward();
+                        
+                        lastChar = c;
                     }
 
                     this.currentString += c;
