@@ -1,7 +1,7 @@
 import range from './range';
 import times from './times';
 
-import { subtract, add, multiply, insert } from './operators';
+import { subtract, add, multiply, insert, spaceship } from './operators';
 
 export default function augmentify (context: any): void {
     context.subtract = subtract;
@@ -10,13 +10,14 @@ export default function augmentify (context: any): void {
     context.range = range;
     context.times = times;
     context.insert = insert;
+    context.spaceship = spaceship;
 }
 
 export {
     range,
     times,
 
-    subtract, add, multiply, insert,
+    subtract, add, multiply, insert, spaceship,
 
     augmentify
 }

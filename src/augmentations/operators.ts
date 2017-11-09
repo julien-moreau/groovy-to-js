@@ -3,11 +3,11 @@
  * @param a the source array
  * @param b the array/number to remove from "a"
  */
-export function subtract (a: number | number[], b: number | number[]): number | number[] {
+export function subtract(a: number | number[], b: number |  number[]): number | number[] {
     if (!Array.isArray(a) && !Array.isArray(b))
         return a - b;
-    
-    const result = (<number[]> a).slice(0);
+
+    const result = (<number[]>a).slice(0);
 
     b = Array.isArray(b) ? b : [b];
     b.forEach(v => {
@@ -25,11 +25,11 @@ export function subtract (a: number | number[], b: number | number[]): number |
  * @param a the source array
  * @param b the target array/number to add to "a"
  */
-export function add (a: number | number[], b: number | number[]): number | number[] {
+export function add(a: number | number[], b: number | number[]): number | number[] {
     if (!Array.isArray(a) && !Array.isArray(b))
         return a + b;
 
-    const result = (<number[]> a).slice(0);
+    const result = (<number[]>a).slice(0);
 
     b = Array.isArray(b) ? b : [b];
     b.forEach(v => result.push(v));
@@ -42,11 +42,11 @@ export function add (a: number | number[], b: number | number[]): number | numbe
  * @param a the source array
  * @param b how many times to add "a" into "a"
  */
-export function multiply (a: number | number[], b: number | number[]): number | number[] {
+export function multiply(a: number | number[], b: number | number[]): number | number[] {
     if (!Array.isArray(a) && !Array.isArray(b))
         return a * b;
 
-    const result = (<number[]> a).slice(0);
+    const result = (<number[]>a).slice(0);
 
     b = Array.isArray(b) ? b : [b];
     if (b.length > 1)
@@ -59,13 +59,33 @@ export function multiply (a: number | number[], b: number | number[]): number | 
     return result;
 }
 
-export function insert (a: number | number[], b: number | number[]): number | number[] {
+/**
+ * Inserts a value in an array
+ * @param a the array
+ * @param b the value
+ */
+export function insert(a: number | number[], b: number |  number[]): number | number[] {
     if (!Array.isArray(a) && !Array.isArray(b))
         return a << b;
 
-    const result = (<number[]> a).slice(0);
+    const result = (<number[]>a).slice(0);
     b = Array.isArray(b) ? b : [b];
-    
+
     b.forEach(v => result.push(v));
     return result;
+}
+
+/**
+ * Spaceship operator
+ * @param a left node
+ * @param b right node
+ */
+export function spaceship(a: number | Date, b: number | Date) {
+    if (a < b)
+        return -1;
+
+    if (a == b)
+        return 0;
+    
+    return 1;
 }
