@@ -17,6 +17,12 @@ Groovy to JS simply tries to convert a Groovy code to JavaScript code.
 * Class definitions
 * array[index < 0]
 
+# Using Groovy-To-JS
+```typescript
+import groovy_to_js from 'groovy-to-js';
+const js = groovy_to_js(my_groovy_code_as_string);
+```
+
 # Using the converter
 ```typescript
 // Import lib
