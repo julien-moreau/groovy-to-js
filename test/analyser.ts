@@ -126,6 +126,18 @@ describe('An Analyser', () => {
         assert.throws(() => Analyser.convert(str));
     });
 
+    it('should be able to skip comments and new lines', () => {
+        const str = `
+            def a =
+            // A comment just here :)
+            0;
+        `;
+        const analyser = new Analyser(str, true);
+        const result = analyser.parse();
+
+        assertResult(result, 'var a = 0;');
+    });
+
     it('shoud throw when using triple equel === (or more)', () => {
         const str = `
             def a = 1 === 0;

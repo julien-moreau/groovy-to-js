@@ -14,8 +14,23 @@ describe('A Tokenizer', () => {
     });
 
     it('should tokenize a string which has quotes in it', () => {
-        const str3 = `"<html class=\\"table\\" width=\\"1%\\">"`;
-        const tokenizer3 = new Tokenizer(str3);
-        assert(tokenizer3.getNextToken() === TokenType.STRING && tokenizer3.currentString === str3);
+        const str = `"<html class=\\"table\\" width=\\"1%\\">"`;
+        const tokenizer = new Tokenizer(str);
+        assert(tokenizer.getNextToken() === TokenType.STRING && tokenizer.currentString === str);
+    });
+
+    it('should be able to skip comments', () => {
+        const str = `
+            // Comment
+            def a = 0;
+        `;
+
+        const tokenizer = new Tokenizer(str);
+        tokenizer.getNextToken(); // \n
+        assert(tokenizer.getNextToken() === TokenType.COMMENT);
+
+        const tokenizer2 = new Tokenizer(str);
+        tokenizer2.skipCommentsAndNewLines = true;
+        assert(tokenizer2.getNextToken() === TokenType.IDENTIFIER);
     });
 });

@@ -16,6 +16,8 @@ export default class Tokenizer {
     public lastString: string = '';
     public currentLine: number = 1;
 
+    public skipCommentsAndNewLines: boolean = false;
+
     // Private members
     private pos: number;
     private maxPos: number;
@@ -198,7 +200,7 @@ export default class Tokenizer {
             case '{': return this.currentToken = TokenType.BRACKET_OPEN;
             case '}': return this.currentToken = TokenType.BRACKET_CLOSE;
             case '\r':
-            case '\n': this.currentLine++; return this.currentToken = TokenType.LINE_END;
+            case '\n': this.currentLine++; return (this.skipCommentsAndNewLines ? this.getNextToken() : this.currentToken = TokenType.LINE_END);
             case ':': return this.currentToken = TokenType.DESCRIPTOR;
             default: {
                 // Number or range
@@ -360,6 +362,9 @@ export default class Tokenizer {
                         }
 
                         this.lastString = this.currentComment;
+
+                        if (this.skipCommentsAndNewLines)
+                            return this.getNextToken();
                     }
                     // Negavive number ?
                     else if (this.isDigit.test(c)) {

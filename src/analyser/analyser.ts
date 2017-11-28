@@ -17,8 +17,9 @@ export default class Analyser {
      * Constructor
      * @param toParse The groovy script to parse
      */
-    constructor (toParse: string) {
+    constructor (toParse: string, skipCommentsAndNewLines: boolean = false) {
         this.tokenizer = new Tokenizer(toParse);
+        this.tokenizer.skipCommentsAndNewLines = skipCommentsAndNewLines;
 
         // Get first token of code block
         this.tokenizer.getNextToken();
@@ -105,6 +106,12 @@ export default class Analyser {
         
         let right = '';
 
+        // If previous (skip comments and new lines)
+        while (previous && this.tokenizer.currentToken === TokenType.LINE_END ||this.tokenizer.currentToken === TokenType.COMMENT) {
+            result.str += this.tokenizer.lastString;
+            this.tokenizer.getNextToken();
+        }
+
         // Identifier ?
         if ((right = <string> this.tokenizer.matchIdentifier())) {
             if (keywords[right])
@@ -124,13 +131,13 @@ export default class Analyser {
 
                     if (expr.variable) {
                         result.variable.type = expr.variable.type;
-                        result.str = `var ${variableName} = ${ctor ? 'new' : ''} ${this.operators(scope, expr.variable)}`;
+                        result.str += `var ${variableName} = ${ctor ? 'new' : ''} ${this.operators(scope, expr.variable)}`;
 
                         expr.variable.remove(); // Remove the temp variable
                     }
                 }
                 else
-                    result.str = `var ${variableName}`;
+                    result.str += `var ${variableName}`;
 
                 if (this.tokenizer.match(TokenType.INSTRUCTION_END))
                     result.str += ';';
@@ -156,13 +163,13 @@ export default class Analyser {
                 // Method call ?
                 else if (functions.global[right]) {
                     const fn = functions.global[right];
-                    result.str = `${fn}(${this.expression(scope, previous).str})`;
+                    result.str += `${fn}(${this.expression(scope, previous).str})`;
                 }
                 // Just add
                 else {
                     result.variable = Variable.find(scope, v => v.name === right);
                     if (result.variable) {
-                        result.str = this.operators(scope, result.variable);
+                        result.str += this.operators(scope, result.variable);
 
                         if (previous)
                             result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
@@ -171,11 +178,11 @@ export default class Analyser {
                         // New variable on the fly ?
                         if (this.tokenizer.match(TokenType.ASSIGN)) {
                             const expr = this.expression(scope);
-                            result.str = `var ${right} = ${expr.str}`;
+                            result.str += `var ${right} = ${expr.str}`;
                             result.variable = new Variable(scope, right, expr.variable.type);
                         }
                         else {
-                            result.str = right;
+                            result.str += right;
                             result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
                         }
                     }
@@ -193,7 +200,7 @@ export default class Analyser {
             }
             else {
                 result.variable = new Variable(scope, number, VariableType.NUMBER);
-                result.str = this.operators(scope, result.variable);
+                result.str += this.operators(scope, result.variable);
                 result.variable.remove();
             }
         }
@@ -205,14 +212,14 @@ export default class Analyser {
             if (result.variable.name.match(/\$\{(.*)\}/))
                 result.variable.name = '`' + result.variable.name.substr(1, result.variable.name.length - 2) + '`';
 
-            result.str = this.operators(scope, result.variable);
+            result.str += this.operators(scope, result.variable);
         }
         // Array ?
         else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
             const array = this.array(scope, previous);
 
             result.variable = new Variable(scope, array.str, array.type);
-            result.str = this.operators(scope, result.variable);
+            result.str += this.operators(scope, result.variable);
 
             result.variable.remove();
             result.variable = new Variable(scope, result.str, result.variable.type);
@@ -221,7 +228,7 @@ export default class Analyser {
         else if (this.tokenizer.match(TokenType.BRACKET_OPEN)) {
             const fn = this.func(scope);
             result.variable = new Variable(scope, fn, VariableType.FUNCTION);
-            result.str = fn;
+            result.str += fn;
         }
         // Accessor ?
         else if ((right = this.tokenizer.matchAccessor())) {
@@ -229,7 +236,7 @@ export default class Analyser {
             const variable = accessor.variable || Variable.find(scope, v => v.name === accessor.str);
 
             result.variable = variable || new Variable(scope, accessor.str, VariableType.ANY);
-            result.str = this.operators(scope, result.variable);
+            result.str += this.operators(scope, result.variable);
 
             if (!variable)
                 result.variable.remove();
@@ -260,7 +267,7 @@ export default class Analyser {
         }
         // Parenthetized expression ?
         else if (this.tokenizer.match(TokenType.PARENTHESIS_OPEN)) {
-            result.str = '(';
+            result.str += '(';
 
             while (!this.tokenizer.match(TokenType.PARENTHESIS_CLOSE)) {
                 const expr = this.expression(scope, previous);
@@ -840,7 +847,7 @@ export default class Analyser {
      * @param toParse the Groovy string to transpile to JavaScript
      */
     public static convert (toParse: string, scope?: Scope): string {
-        const analyser = new Analyser(toParse + '\n');
+        const analyser = new Analyser(toParse + '\n', true);
         const result = analyser.parse(scope);
         return beautifier.js_beautify(result);
     }
