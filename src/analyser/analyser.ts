@@ -195,7 +195,7 @@ export default class Analyser {
 
             if (right[right.length - 1] === '.' && (right = <string> this.tokenizer.matchIdentifier())) {
                 result.variable = new Variable(scope, right, VariableType.FUNCTION);
-                result.str += `${right}(${number.substr(0, number.length - 1)}, ${this.expression(scope).str})`;
+                result.str += `${right}(${number.substr(0, number.length - 1)}, ${this.expression(scope).str})\n`;
                 result.variable.remove();
             }
             else {
@@ -339,6 +339,10 @@ export default class Analyser {
             // Switch
             else if (this.tokenizer.matchIdentifier('switch')) {
                 str += `switch ${this.expression(newScope).str}`;
+            }
+            // Else ?
+            else if (this.tokenizer.matchIdentifier('else')) {
+                str += 'else ';
             }
             // Return statement ?
             else if (this.tokenizer.matchIdentifier('return')) {
@@ -577,7 +581,7 @@ export default class Analyser {
                     }
 
                     let hasArguments = this.tokenizer.currentToken === TokenType.BRACKET_OPEN;
-                    accessor = `${prev}.${fn.name}(${hasArguments ? this.expression(scope).str : ''})`;
+                    accessor = `${prev}.${fn.name}(${hasArguments ? this.expression(scope).str : ''})\n`;
                     variable = new Variable(scope, accessor, VariableType.VOID);
 
                     // Avoid last parenthesis
