@@ -24,7 +24,7 @@ export default class Tokenizer {
 
     private isLetterOrDigitPattern: RegExp = /^[a-zA-Z0-9]+$/;
     private isDigit: RegExp = /^[0-9]+$/;
-    private isOperator: RegExp = /^[-+*/<>=!&|]+$/;
+    private isOperator: RegExp = /^[-+*/%<>=!&|]+$/;
 
     /**
      * Constructor
@@ -185,7 +185,7 @@ export default class Tokenizer {
 
         // 2 - White space
         var c: string = ' ';
-        while((c = this.read()) === ' ')
+        while((c = this.read()) === ' ' || c === '\t')
             if (this.isEnd()) return this.currentToken = TokenType.END_OF_INPUT;
 
         this.lastString = c;

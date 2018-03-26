@@ -1,68 +1,19 @@
 import Analyser from '../src/analyser/analyser';
 import Variable from '../src/analyser/scope-variable';
+import augmentify from '../src/augmentations/index';
 
+import * as vm from 'vm';
 import * as beautifier from 'js-beautify';
 import * as assert from 'assert';
 
 describe('A Complete Analyser', () => {
+    function evalInContext(js, context) {
+        //# Return the results of the in-line anonymous function we .call with the passed context
+        return function() { return eval(js); }.call(context);
+    }
+
     const execute = (code: string, args: string = '', values: string = ''): any => {
         let final = `
-            var range = function (start, end) {
-                return Array.from({ length: end - start + 1 }, (v, k) => k + start); 
-            };
-
-            var subtract = function (a, b) {
-                if (b instanceof Array) {
-                    for (var i = 0; i < b.length; i++) { 
-                        for (var j = 0; j < a.length; j++) {
-                            if (a[j] === b[i]) {
-                                a.splice(j, 1);
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    for (var i = 0; i < a.length; i++) {
-                        if (a[i] === b) {
-                            a.splice(i, 1);
-                        }
-                    }
-                }
-
-                return a;
-            };
-
-            var add = function (a, b) {
-                if (b instanceof Array) {
-                    for (var i = 0; i < b.length; i++) {
-                        a.push(b[i]);
-                    }
-                } else {
-                    a.push(b);
-                }
-
-                return a;
-            };
-
-            var multiply = function (a, b) {
-                var arr = [];
-                for (var i = 0; i < a.length; i++) {
-                    arr.push(a[i]);
-                }
-
-                for (var i = 0; i < b - 1; i++) {
-                    a = a.concat(arr);
-                }
-
-                return a;
-            };
-
-            var times = function (a, b) {
-                for (var i = 0; i < a; i++) {
-                    b(i);
-                }
-            };
-
             var swrFunc = function () {
                 return [];
             };
@@ -96,7 +47,20 @@ describe('A Complete Analyser', () => {
         `;
 
         final = beautifier.js_beautify(final);
-        return eval(final);
+
+        const context = { };
+        augmentify(context);
+
+        // Get VM
+        const script = new vm.Script(final, {
+            filename: 'coucou.js',
+            displayErrors: true
+        });
+
+        const sandbox = vm.createContext(context);
+        return script.runInContext(sandbox, { timeout: 1000000 });
+
+        //return evalInContext(final, context); // eval.call(context, final);
     };
 
     it('should return a value', () => {

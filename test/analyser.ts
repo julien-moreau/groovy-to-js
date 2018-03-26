@@ -1308,6 +1308,33 @@ describe('An Analyser', () => {
         `);
     });
 
+    it('should call add for strings', () => {
+        // TODO: insert for strings
+        const str = `
+            content = "a" << "b"
+        `;
+
+        const result = Analyser.convert(str);
+
+        assertResult(result, `
+            var content = "a" = insert("a", "b")
+        `);
+    });
+
+    it('should return line', () => {
+        const str = `
+            content = content + "a" + it.hello + "b"
+            content = content + "c"
+        `;
+
+        const result = Analyser.convert(str);
+
+        assertResult(result, `
+            var content = content + "a" + add(it.hello, "b")
+            content = add(content, "c")
+        `);
+    });
+
     it('should parse a class with a method in it', () => {
         const str = `
             class A {

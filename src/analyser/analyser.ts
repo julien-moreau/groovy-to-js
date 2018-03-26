@@ -212,7 +212,9 @@ export default class Analyser {
             if (result.variable.name.match(/\$\{(.*)\}/))
                 result.variable.name = '`' + result.variable.name.substr(1, result.variable.name.length - 2) + '`';
 
-            result.str += this.operators(scope, result.variable);
+            const str = this.operators(scope, result.variable);
+            result.variable.name = str;
+            result.str += str;
         }
         // Array ?
         else if (this.tokenizer.match(TokenType.ACCESSOR_OPEN)) {
@@ -690,7 +692,7 @@ export default class Analyser {
      * @param left the left variable
      */
     protected operators (scope: Scope, left: Variable): string {
-        if (left.type !== VariableType.ARRAY && left.type !== VariableType.ANY)
+        if (left.type !== VariableType.ARRAY && left.type !== VariableType.STRING && left.type !== VariableType.ANY)
             return left.name;
         
         let str = left.name;
@@ -728,7 +730,7 @@ export default class Analyser {
             // Expression
             else {
                 const expr = this.expression(scope);
-                str = `${fn}(${str}, ${expr.str})`;
+                str = `${fn}(${str}, ${expr.str})\n`;
                 expr.variable.remove();
             }
         }

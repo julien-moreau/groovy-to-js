@@ -1,10 +1,16 @@
+import range from "./range";
+
 /**
  * Removes all the elements of "b" in "a"
  * @param a the source array
  * @param b the array/number to remove from "a"
  */
-export function subtract(a: number | number[], b: number |  number[]): number | number[] {
-    if (!Array.isArray(a) && !Array.isArray(b))
+export function subtract(a: string | number | any[], b: string | number | any[]): string | number | number[] {
+    if (typeof a === 'string') {
+        return a.replace(b.toString(), '');
+    }
+
+    if (!Array.isArray(a) && !Array.isArray(b) && typeof b !== 'string')
         return a - b;
 
     const result = (<number[]>a).slice(0);
@@ -25,8 +31,12 @@ export function subtract(a: number | number[], b: number |  number[]): number |
  * @param a the source array
  * @param b the target array/number to add to "a"
  */
-export function add(a: number | number[], b: number | number[]): number | number[] {
-    if (!Array.isArray(a) && !Array.isArray(b))
+export function add(a: string | number | any[], b: string | number | any[]): string | number | number[] {
+    if (typeof a === 'string') {
+        return a + b;
+    }
+
+    if (!Array.isArray(a) && !Array.isArray(b) && typeof b !== 'string')
         return a + b;
 
     const result = (<number[]>a).slice(0);
@@ -42,8 +52,17 @@ export function add(a: number | number[], b: number | number[]): number | number
  * @param a the source array
  * @param b how many times to add "a" into "a"
  */
-export function multiply(a: number | number[], b: number | number[]): number | number[] {
-    if (!Array.isArray(a) && !Array.isArray(b))
+export function multiply(a: string | number | any[], b: string | number | any[]): string | number | number[] {
+    if (typeof a === 'string') {
+        let str = a.toString();
+        
+        for (let i = 0; i < b; i++)
+            str += b;
+
+        return str;
+    }
+
+    if (!Array.isArray(a) && !Array.isArray(b) && typeof b !== 'string')
         return a * b;
 
     const result = (<number[]>a).slice(0);
@@ -61,11 +80,15 @@ export function multiply(a: number | number[], b: number | number[]): number | n
 
 /**
  * Inserts a value in an array
- * @param a the array
+ * @param a the array or the string
  * @param b the value
  */
-export function insert(a: number | number[], b: number |  number[]): number | number[] {
-    if (!Array.isArray(a) && !Array.isArray(b))
+export function insert(a: string | number | any[], b: string | number | any[]): string | number | any[] {
+    if (typeof a === 'string') {
+        return a + b;
+    }
+
+    if (!Array.isArray(a) && !Array.isArray(b) && typeof b !== 'string')
         return a << b;
 
     const result = (<number[]>a).slice(0);
