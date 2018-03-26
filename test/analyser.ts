@@ -1309,7 +1309,6 @@ describe('An Analyser', () => {
     });
 
     it('should call add for strings', () => {
-        // TODO: insert for strings
         const str = `
             content = "a" << "b"
         `;
@@ -1321,7 +1320,7 @@ describe('An Analyser', () => {
         `);
     });
 
-    it('should return line', () => {
+    it('should return a new line', () => {
         const str = `
             content = content + "a" + it.hello + "b"
             content = content + "c"
@@ -1330,7 +1329,7 @@ describe('An Analyser', () => {
         const result = Analyser.convert(str);
 
         assertResult(result, `
-            var content = content + "a" + add(it.hello, "b")
+            var content = add(content, add("a", add(it.hello, "b")))
             content = add(content, "c")
         `);
     });

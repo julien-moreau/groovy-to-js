@@ -182,8 +182,15 @@ export default class Analyser {
                             result.variable = new Variable(scope, right, expr.variable.type);
                         }
                         else {
-                            result.str += right;
-                            result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
+                            //result.str += right;
+                            //result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
+
+                            const variable = new Variable(scope, right, result.variable ? result.variable.type : VariableType.ANY);
+                            const str = this.operators(scope, variable);
+
+                            result.str += str;
+                            result.variable = variable;
+                            result.variable.name = str;
                         }
                     }
                 }
