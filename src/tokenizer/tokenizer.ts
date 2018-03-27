@@ -270,9 +270,18 @@ export default class Tokenizer {
                     this.currentToken = TokenType.STRING;
                     this.currentString = c;
 
+                    const stringType = c; // " or '
+
                     let lastChar = c;
 
-                    while (!this.isEnd() && ((c = this.peek()) !== '"' && c !== "'" || lastChar === '\\')) {
+                    while (!this.isEnd() && ((c = this.peek()))) {
+                        if (lastChar !== '\\') {
+                            if (c === "'" && stringType === c)
+                                break;
+                            
+                            if (c === '"' && stringType === c)
+                                break;
+                        }
                         this.currentString += c;
                         this.forward();
                         

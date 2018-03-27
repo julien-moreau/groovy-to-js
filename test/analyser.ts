@@ -1320,7 +1320,19 @@ describe('An Analyser', () => {
         `);
     });
 
-    it('should return a new line', () => {
+    it('should parse a string " containing simple quotes', () => {
+        const str = `def a = "don't";`;
+        const result = Analyser.convert(str);
+        assertResult(result, `var a = "don't";`);
+    });
+
+    it('should parse a string " containing double quotes', () => {
+        const str = `def a = 'don"t';`;
+        const result = Analyser.convert(str);
+        assertResult(result, `var a = 'don"t';`);
+    });
+
+    it.skip('should return a new line', () => {
         const str = `
             content = content + "a" + it.hello + "b"
             content = content + "c"
