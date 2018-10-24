@@ -89,6 +89,17 @@ describe('An Analyser', () => {
         assert(analyser.scope.variables[1].type === VariableType.NUMBER);
     });
 
+    it('should parse a variable definition with a cast', () => {
+        const str = `
+        def a = 1;
+        def b = a;
+        b = (int)a;`;
+
+        const analyser = new Analyser(str);
+        const result = analyser.parse();
+        assertResult(result, `var a = 1;var b = a;b=a;`);
+    });
+
     it('should avoid type casting', () => {
         const str = `
             def myvar1 = 0;
@@ -375,6 +386,13 @@ describe('An Analyser', () => {
         const result = analyser.parse();
 
         assertResult(result, 'var myvar = `hello`;');
+    });
+
+    it('should parse a triple double quotes beginning with a quote', () => {
+        assertResult(new Analyser(`def a = """"hello"""";`).parse(), 'var a = `"hello"`;');
+        assertResult(new Analyser(`def a = """'hello'""";`).parse(), 'var a = `\'hello\'`;');
+        assertResult(new Analyser(`def a = ''''hello'''';`).parse(), 'var a = `\'hello\'`;');
+        assertResult(new Analyser(`def a = '''"hello"''';`).parse(), 'var a = `"hello"`;');
     });
 
     it('should parse a variable which is a string with variable access', () => {

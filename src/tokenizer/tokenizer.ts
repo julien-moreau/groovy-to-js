@@ -309,6 +309,11 @@ export default class Tokenizer {
                                     count++;
                             }
 
+                            while (this.toParse[this.pos] === stringType) {
+                                this.currentString += this.peek();
+                                this.forward();
+                            }
+
                             this.currentString = '`' + this.currentString.substr(3, this.currentString.length - 6) + '`';
                         }
                     }

@@ -173,6 +173,16 @@ export default class Analyser {
 
                         if (previous)
                             result.variable = new Variable(scope, result.str, result.variable ? result.variable.type : VariableType.ANY);
+
+                        // Assignation?
+                        if (this.tokenizer.match(TokenType.ASSIGN)) {
+                            result.str += ' = ';
+                            const expr = this.expression(scope);
+
+                            if (expr.str !== '()') {
+                                result.str += expr.str;
+                            }
+                        }
                     }
                     else {
                         // New variable on the fly ?
@@ -290,10 +300,9 @@ export default class Analyser {
 
             result.str += ')';
 
-            /*
-            if (result.str === '()')
-                result = this.expression(scope, previous);
-            */
+            // if (result.str === '()') {
+            //     result = this.expression(scope, previous);
+            // }
         }
         // Assign ? (=)
         else if (this.tokenizer.match(TokenType.ASSIGN)) {
