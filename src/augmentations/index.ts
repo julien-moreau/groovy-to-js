@@ -1,7 +1,7 @@
-import range from './range';
-import times from './times';
+import range from "./range";
+import times from "./times";
 
-import { subtract, add, multiply, insert, spaceship } from './operators';
+import { subtract, add, multiply, insert, spaceship } from "./operators";
 
 export default function augmentify (context: any): void {
     context.subtract = subtract;
