@@ -37,6 +37,13 @@ export class Analyser {
     }
 
     /**
+     * Returns if the anlyser analysed all the code
+     */
+    public get isEnd(): boolean {
+        return this._tokenizer.isEnd;
+    }
+
+    /**
      * Returns the top level expression
      * @param tokenizer the tokenizer reference
      */
@@ -124,8 +131,11 @@ export class Analyser {
             return new ConstantNode(parseInt(tokenizer.currentString));
 
         const identifier = tokenizer.currentString;
-        if (tokenizer.match(ETokenType.Identifier) || tokenizer.match(ETokenType.String))
+        if (tokenizer.match(ETokenType.String))
             return new ConstantNode(identifier);
+
+        if (tokenizer.match(ETokenType.Identifier))
+            return new VariableNode(identifier);
 
         // Super expression
         if (!tokenizer.match(ETokenType.OpenPar)) return new ErrorNode("Expected constant or identifier or opening parenthesis");

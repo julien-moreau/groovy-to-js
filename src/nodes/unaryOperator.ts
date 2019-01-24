@@ -9,4 +9,11 @@ export class UnaryOperatorNode extends Node {
     constructor(public operator: ETokenType, public right: Node) {
         super(ENodeType.UnaryOperator);
     }
+
+    /**
+     * Returns the node's string
+     */
+    public toString(): string {
+        return `-${this.right.toString()}`;
+    }
 }

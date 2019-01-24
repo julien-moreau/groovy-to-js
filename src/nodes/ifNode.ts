@@ -8,4 +8,11 @@ export class IfNode extends Node {
     constructor(public condition: Node, public ifTrue: Node, public ifFalse: Node) {
         super(ENodeType.IfNode);
     }
+
+    /**
+     * Returns the node's string
+     */
+    public toString(): string {
+        return `${this.condition.toString()} ? ${this.ifTrue.toString()} : ${this.ifFalse.toString()}`;
+    }
 }

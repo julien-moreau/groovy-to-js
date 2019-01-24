@@ -21,4 +21,11 @@ export class Node {
     constructor(type: ENodeType) {
         this.nodeType = type;
     }
+
+    /**
+     * Returns the node's string
+     */
+    public toString(): string {
+        throw new Error("toString must be implemented");
+    }
 }

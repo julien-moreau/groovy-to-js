@@ -84,4 +84,20 @@ describe("Analyser", () => {
         assert(a.ifTrue instanceof ConstantNode && a.ifTrue.value === 2);
         assert(a.ifFalse instanceof ConstantNode && a.ifFalse.value === 3);
     });
+
+    it("should parse ternary even parenthetized", () => {
+        const a = new Analyser("(1 ? 2 : 3)").analyse() as IfNode;
+        assert(a instanceof IfNode);
+        assert(a.condition instanceof ConstantNode && a.condition.value === 1);
+        assert(a.ifTrue instanceof ConstantNode && a.ifTrue.value === 2);
+        assert(a.ifFalse instanceof ConstantNode && a.ifFalse.value === 3);
+    });
+
+    it("should parse ternary even double parenthetized", () => {
+        const a = new Analyser("((1 ? 2 : 3))").analyse() as IfNode;
+        assert(a instanceof IfNode);
+        assert(a.condition instanceof ConstantNode && a.condition.value === 1);
+        assert(a.ifTrue instanceof ConstantNode && a.ifTrue.value === 2);
+        assert(a.ifFalse instanceof ConstantNode && a.ifFalse.value === 3);
+    });
 });

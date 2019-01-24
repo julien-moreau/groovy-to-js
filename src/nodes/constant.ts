@@ -8,4 +8,11 @@ export class ConstantNode extends Node {
     constructor(public readonly value: number | string | boolean) {
         super(ENodeType.Constant);
     }
+
+    /**
+     * Returns the node's string
+     */
+    public toString(): string {
+        return this.value.toString();
+    }
 }

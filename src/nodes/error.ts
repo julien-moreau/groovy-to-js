@@ -9,4 +9,11 @@ export class ErrorNode extends Node {
     constructor(public message: string) {
         super(ENodeType.Error);
     }
+
+    /**
+     * Returns the node's string
+     */
+    public toString(): string {
+        return this.message;
+    }
 }

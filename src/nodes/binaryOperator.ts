@@ -22,4 +22,11 @@ export class BinaryOperatorNode extends Node {
             default: throw new Error("Invalid Operator.");
         }
     }
+
+    /**
+     * Returns the node's string
+     */
+    public toString(): string {
+        return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+    }
 }

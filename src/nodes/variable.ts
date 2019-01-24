@@ -8,4 +8,11 @@ export class VariableNode extends Node {
     constructor(public name: string) {
         super(ENodeType.Error);
     }
+
+    /**
+     * Returns the node's string
+     */
+    public toString(): string {
+        return this.name;
+    }
 }
