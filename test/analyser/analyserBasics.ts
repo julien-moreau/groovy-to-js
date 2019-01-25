@@ -7,14 +7,34 @@ import { BinaryOperatorNode } from "../../src/nodes/binaryOperator";
 import { VariableDeclarationNode } from "../../src/nodes/variableDeclaration";
 import { ConstantNode } from "../../src/nodes/constant";
 import { IfNode } from "../../src/nodes/ifNode";
+import { VariableNode } from "../../src/nodes/variable";
 
 describe("Analyser", () => {
+    it("should expose current root node", () => {
+        const a = new Analyser("2 + 3");
+        const n = a.analyse() as BinaryOperatorNode;
+        assert(a.rootNode === n);
+    });
+
     it("should return a binary operator node when 2 constants", () => {
         const a = new Analyser("2 + 3").analyse() as BinaryOperatorNode;
         assert(a instanceof BinaryOperatorNode);
         assert(a.operator === ETokenType.Plus);
         assert(a.left instanceof ConstantNode && a.left.value === 2);
         assert(a.right instanceof ConstantNode && a.right.value === 3);
+    });
+
+    it("should return a variable node", () => {
+        const a = new Analyser("x").analyse() as VariableNode;
+        assert(a instanceof VariableNode);
+        assert(a.name === "x");
+    });
+
+    it("should return a binary operator node with variable nodes", () => {
+        const a = new Analyser("x + y").analyse() as BinaryOperatorNode;
+        assert(a instanceof BinaryOperatorNode);
+        assert(a.left instanceof VariableNode && a.left.name === "x");
+        assert(a.right instanceof VariableNode && a.right.name === "y");
     });
 
     it("should return a binary operator node when 2 constants parenthetized", () => {

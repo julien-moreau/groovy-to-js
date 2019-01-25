@@ -35,7 +35,7 @@ export class Analyser {
      * Returns the root node
      */
     public get rootNode(): Node {
-        return this.rootNode;
+        return this._root;
     }
 
     /**
@@ -50,18 +50,6 @@ export class Analyser {
      * @param tokenizer the tokenizer reference
      */
     public getSuperExpression(tokenizer: Tokenizer): Node {
-        // Variable declaration
-        const variableType = tokenizer.currentString;
-        if (tokenizer.match(ETokenType.Identifier)) {
-            if (naviveTypes.indexOf(variableType) === -1) return new ErrorNode(`Unkwnown type: ${variableType}`);
-
-            const variableName = tokenizer.currentString;
-            if (!tokenizer.match(ETokenType.Identifier)) return new ErrorNode("Expected a variable name");
-            if (!tokenizer.match(ETokenType.Equal)) return new VariableDeclarationNode(variableType, variableName, null);
-
-            return new VariableDeclarationNode(variableType, variableName, this.getSuperExpression(tokenizer));
-        }
-
         // Expression
         const e = this.getExpression(tokenizer);
 
@@ -136,15 +124,26 @@ export class Analyser {
      * @example positive factor: "2", "variable", "(...)"
      */
     public getPositiveFactor(tokenizer: Tokenizer): Node {
+        // Number
         if (tokenizer.match(ETokenType.Number))
             return new ConstantNode(parseInt(tokenizer.currentString));
 
+        // String
         const identifier = tokenizer.currentString;
         if (tokenizer.match(ETokenType.String))
             return new ConstantNode(identifier);
 
-        if (tokenizer.match(ETokenType.Identifier))
-            return new VariableNode(identifier);
+        // Identifier
+        const variableOrType = tokenizer.currentString;
+        if (tokenizer.match(ETokenType.Identifier)) {
+            // Variable
+            const variableName = tokenizer.currentString;
+            if (!tokenizer.match(ETokenType.Identifier)) return new VariableNode(variableOrType);
+
+            // Definition
+            if (!tokenizer.match(ETokenType.Equal)) return new VariableDeclarationNode(variableOrType, variableName, null);
+            return new VariableDeclarationNode(variableOrType, variableName, this.getSuperExpression(tokenizer));
+        }
 
         // Array
         if (tokenizer.match(ETokenType.OpenBracket)) {
