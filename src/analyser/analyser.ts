@@ -21,6 +21,7 @@ import { AssignNode } from "../nodes/variables/assign";
 import { ForNode } from "../nodes/loops/for";
 import { BreakNode } from "../nodes/keywords/break";
 import { DoNode } from "../nodes/loops/do";
+import { LogicNode } from "../nodes/operators/logicOperator";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
@@ -106,6 +107,12 @@ export class Analyser {
                 continue;
             }
 
+            // "||"
+            if (tokenizer.match(ETokenType.Or)) {
+                left = new LogicNode(operator, left, this.getSuperExpression(tokenizer));
+                continue;
+            }
+
             break;
         }
 
@@ -123,6 +130,12 @@ export class Analyser {
             const operator = tokenizer.currentToken;
             if(tokenizer.match(ETokenType.Mult) || tokenizer.match(ETokenType.Div) || tokenizer.match(ETokenType.SpaceShip)) {
                 left = new BinaryOperatorNode(operator, left, this.getFactor(tokenizer));
+                continue;
+            }
+
+            // "&&"
+            if (tokenizer.match(ETokenType.And)) {
+                left = new LogicNode(operator, left, this.getSuperExpression(tokenizer));
                 continue;
             }
 

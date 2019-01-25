@@ -49,4 +49,16 @@ describe("Tokenizer", () => {
         assert.equal(t.currentToken, ETokenType.Equality);
         assert.equal(t.currentString, "==");
     });
+
+    it("should return logic operator and", () => {
+        const t = new Tokenizer("&&");
+        assert.equal(t.currentToken, ETokenType.And);
+        assert.equal(t.currentString, "&&");
+    });
+
+    it("should return logic operator or", () => {
+        const t = new Tokenizer("||");
+        assert.equal(t.currentToken, ETokenType.Or);
+        assert.equal(t.currentString, "||");
+    });
 });

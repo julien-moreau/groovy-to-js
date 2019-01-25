@@ -10,6 +10,7 @@ import { TernaryNode } from "../../src/nodes/logic/ternary";
 import { VariableNode } from "../../src/nodes/variables/variable";
 import { ErrorNode } from "../../src/nodes/error";
 import { EndOfInstructionNode } from "../../src/nodes/endOfInstruction";
+import { LogicNode } from "../../src/nodes/operators/logicOperator";
 
 describe("Analyser", () => {
     it("should expose current root node", () => {
@@ -157,5 +158,16 @@ describe("Analyser", () => {
     it("should return error node for broken ternary", () => {
         const a = new Analyser("1 ? 3").analyse() as ErrorNode;
         assert(a instanceof ErrorNode);
+    });
+
+    it("should parse logic operator and", () => {
+        const a = new Analyser("a && (b || c)").analyse() as LogicNode;
+        assert(a instanceof LogicNode);
+        assert(a.left instanceof VariableNode && a.left.name === "a");
+        
+        const b = a.right as LogicNode;
+        assert(b instanceof LogicNode);
+        assert(b.left instanceof VariableNode && b.left.name === "b");
+        assert(b.right instanceof VariableNode && b.right.name === "c");
     });
 });

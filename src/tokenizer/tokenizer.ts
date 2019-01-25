@@ -5,6 +5,7 @@ export enum ETokenType {
     IsBinaryOperator = 1 << 12,
     Number = 1 << 13,
     String = 1 << 14,
+    IsLogicOperator = 1 << 15,
     
     Plus = IsBinaryOperator + 0,
     Minus = IsBinaryOperator + 1,
@@ -14,6 +15,9 @@ export enum ETokenType {
     Not = IsBinaryOperator + 5,
     SelfMinus = IsBinaryOperator + 6,
     SelfPlus = IsBinaryOperator + 7,
+
+    And = IsLogicOperator + 0,
+    Or = IsLogicOperator + 1,
     
     OpenPar = IsBracket + 0,
     ClosePar = IsBracket + 1,
@@ -47,6 +51,7 @@ export class Tokenizer {
     public static IsNumberPattern: RegExp = /^[0-9]+$/;
     public static IsStringPattern: RegExp = /^["']+$/;
     public static IsOperatorPattern: RegExp = /^[+-/*]+$/;
+    public static IsLogicOperatorPattern: RegExp = /^[&|]+$/;
 
     private _type: ETokenType = ETokenType.None;
     private _buffer: string = "";
@@ -186,6 +191,21 @@ export class Tokenizer {
                     }
 
                     this._buffer += c;
+                }
+                // Logic operator
+                else if (Tokenizer.IsLogicOperatorPattern.test(c)) {
+                    this._buffer = c;
+
+                    while (Tokenizer.IsLogicOperatorPattern.test(c = this.peek())) {
+                        this._buffer += c;
+                        this.forward();
+                    }
+
+                    switch (this._buffer) {
+                        case "&&": return (this._type = ETokenType.And);
+                        case "||": return (this._type = ETokenType.Or);
+                        default: return (this._type = ETokenType.Error);
+                    }
                 }
                 // Operator
                 else if (Tokenizer.IsOperatorPattern.test(c)) {
