@@ -10,6 +10,10 @@ export enum ETokenType {
     Minus = IsBinaryOperator + 1,
     Mult = IsBinaryOperator + 2,
     Div = IsBinaryOperator + 3,
+    SpaceShip = IsBinaryOperator + 4,
+    Not = IsBinaryOperator + 5,
+    SelfMinus = IsBinaryOperator + 6,
+    SelfPlus = IsBinaryOperator + 7,
     
     OpenPar = IsBracket + 0,
     ClosePar = IsBracket + 1,
@@ -24,6 +28,10 @@ export enum ETokenType {
     Equal = 4,
     Equality = 5,
     Comma = 6,
+    Inferior = 7,
+    InferiorOrEqual = 8,
+    Superior = 9,
+    SuperiorOrEqual = 10,
 
     EndOfInput = 1 << 30,
     Error = 1 << 31
@@ -38,6 +46,7 @@ export class Tokenizer {
     public static IsLetterPattern: RegExp = /^[a-zA-Z]+$/;
     public static IsNumberPattern: RegExp = /^[0-9]+$/;
     public static IsStringPattern: RegExp = /^["']+$/;
+    public static IsOperatorPattern: RegExp = /^[+-/*]+$/;
 
     private _type: ETokenType = ETokenType.None;
     private _buffer: string = "";
@@ -124,11 +133,7 @@ export class Tokenizer {
 
         // 3- Terminals
         switch (c) {
-            case "-": return (this._type = ETokenType.Minus);
-            case "+": return (this._type = ETokenType.Plus);
-            case "*": return (this._type = ETokenType.Mult);
-            case "/": return (this._type = ETokenType.Div);
-
+            case "!": return (this._type = ETokenType.Not);
             case "(": return (this._type = ETokenType.OpenPar);
             case ")": return (this._type = ETokenType.ClosePar);
             case "[": return (this._type = ETokenType.OpenBracket);
@@ -181,6 +186,61 @@ export class Tokenizer {
                     }
 
                     this._buffer += c;
+                }
+                // Operator
+                else if (Tokenizer.IsOperatorPattern.test(c)) {
+                    switch (c) {
+                        case "-": this._type = ETokenType.Minus; break;
+                        case "+": this._type = ETokenType.Plus; break;
+                        case "*": this._type = ETokenType.Mult; break;
+                        case "/": this._type = ETokenType.Div; break;
+                        case "!": this._type = ETokenType.Not; break;
+                        default: return this._type = ETokenType.Error;
+                    }
+
+                    this._buffer = c;
+
+                    // --, ++, etc.
+                    if (c === (c = this.peek())) {
+                        this._buffer += c;
+                        this.forward();
+
+                        switch (c) {
+                            case "-": this._type = ETokenType.SelfMinus; break;
+                            case "+": this._type = ETokenType.SelfPlus; break;
+                            default: return this._type = ETokenType.Error;
+                        }
+                    }
+                }
+                // Inferior
+                else if (c === "<") {
+                    this._type = ETokenType.Inferior;
+                    this._buffer = c;
+
+                    if ((c = this.peek()) === "=") {
+                        // Inferior or equal
+                        this._type = ETokenType.InferiorOrEqual;
+                        this._buffer += c;
+                        this.forward();
+
+                        if ((c = this.peek()) === ">") {
+                            // Spaceship operator
+                            this._type = ETokenType.SpaceShip;
+                            this._buffer += c;
+                            this.forward();
+                        }
+                    }
+                }
+                // Superior
+                else if (c === ">") {
+                    this._type = ETokenType.Superior;
+                    this._buffer = c;
+
+                    if ((c = this.peek()) === "=") {
+                        this._type = ETokenType.SuperiorOrEqual;
+                        this._buffer += c;
+                        this.forward();
+                    }
                 }
                 else {
                     this._type = ETokenType.Error;

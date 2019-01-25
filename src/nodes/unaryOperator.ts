@@ -17,6 +17,7 @@ export class UnaryOperatorNode extends Node {
         switch (this.operator) {
             case ETokenType.Minus: return "-";
             case ETokenType.Plus: return "+";
+            case ETokenType.Not: return "!";
             default: throw new Error("Invalid Operator.");
         }
     }

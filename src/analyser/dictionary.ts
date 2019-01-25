@@ -6,5 +6,8 @@ export const naviveTypes: string[] = [
 export const keywords: string[] = [
     "if",
     "else",
-    "return"
+    "return",
+    "break",
+    "while",
+    "for"
 ];

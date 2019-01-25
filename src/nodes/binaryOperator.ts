@@ -31,6 +31,7 @@ export class BinaryOperatorNode extends Node {
             case ETokenType.Minus: return "subtract";
             case ETokenType.Plus: return "add";
             case ETokenType.Mult: return "multiply";
+            case ETokenType.SpaceShip: return "spaceship";
             default: return this.operatorString;
         }
     }
@@ -39,7 +40,7 @@ export class BinaryOperatorNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        if (this.left.nodeType !== ENodeType.Array && this.right.nodeType !== ENodeType.Array)
+        if (this.operator !== ETokenType.SpaceShip && this.left.nodeType !== ENodeType.Array && this.right.nodeType !== ENodeType.Array)
             return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
 
         return `${this.operatorMethodString}(${this.left.toString()}, ${this.right.toString()})`;

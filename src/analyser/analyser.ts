@@ -10,11 +10,16 @@ import { BinaryOperatorNode } from "../nodes/binaryOperator";
 import { TernaryNode } from "../nodes/ternary";
 import { VariableNode } from "../nodes/variable";
 import { VariableDeclarationNode } from "../nodes/variableDeclaration";
-import { ArrayNode } from "../nodes/arrayNode";
+import { ArrayNode } from "../nodes/array";
 import { EndOfInstructionNode } from "../nodes/endOfInstruction";
 import { ReturnNode } from "../nodes/return";
 import { IfNode } from "../nodes/ifNode";
 import { BlockNode } from "../nodes/block";
+import { ComparisonNode } from "../nodes/comparison";
+import { WhileNode } from "../nodes/while";
+import { AssignNode } from "../nodes/assign";
+import { ForNode } from "../nodes/for";
+import { BreakNode } from "../nodes/break";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
@@ -60,6 +65,9 @@ export class Analyser {
         // Semicolon
         if (tokenizer.match(ETokenType.SemiColon)) return new EndOfInstructionNode(e);
 
+        // Assignement
+        if (tokenizer.match(ETokenType.Equal)) return new AssignNode(e, this.getSuperExpression(tokenizer));
+
         // Ternary
         if (!tokenizer.match(ETokenType.QuestionMark))
             return e;
@@ -88,6 +96,15 @@ export class Analyser {
                 continue;
             }
 
+            // <, <=, > or >=
+            if (
+                tokenizer.match(ETokenType.Inferior) || tokenizer.match(ETokenType.Superior) ||
+                tokenizer.match(ETokenType.InferiorOrEqual) || tokenizer.match(ETokenType.SuperiorOrEqual)
+            ) {
+                left = new ComparisonNode(operator, left, this.getSuperExpression(tokenizer));
+                continue;
+            }
+
             break;
         }
 
@@ -101,9 +118,9 @@ export class Analyser {
     public getTerm(tokenizer: Tokenizer): Node {
         let left = this.getFactor(tokenizer);
         while (!(left instanceof ErrorNode)) {
-            // * or /
+            // "*" or "/" or "<=>"
             const operator = tokenizer.currentToken;
-            if(tokenizer.match(ETokenType.Mult) || tokenizer.match(ETokenType.Div)) {
+            if(tokenizer.match(ETokenType.Mult) || tokenizer.match(ETokenType.Div) || tokenizer.match(ETokenType.SpaceShip)) {
                 left = new BinaryOperatorNode(operator, left, this.getFactor(tokenizer));
                 continue;
             }
@@ -120,8 +137,18 @@ export class Analyser {
      * @example factor: "2", "-2", "-variable", "variable", "(...)", "-(...)"
      */
     public getFactor(tokenizer: Tokenizer): Node {
-        if (tokenizer.match(ETokenType.Minus))
-            return new UnaryOperatorNode(ETokenType.Minus, this.getFactor(tokenizer));
+        const currentToken = tokenizer.currentToken;
+
+        // Unary
+        if (tokenizer.match(ETokenType.Minus) || tokenizer.match(ETokenType.Not))
+            return new UnaryOperatorNode(currentToken, this.getFactor(tokenizer));
+
+        // pre "--"" or pre "++""
+        if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus)) {
+            const variableName = tokenizer.currentString;
+            if (!tokenizer.match(ETokenType.Identifier)) return new ErrorNode("Expected an identifier");
+            return new VariableNode(variableName, currentToken);
+        }
 
         return this.getPositiveFactor(tokenizer);
     }
@@ -133,8 +160,9 @@ export class Analyser {
      */
     public getPositiveFactor(tokenizer: Tokenizer): Node {
         // Number
+        const number = tokenizer.currentString;
         if (tokenizer.match(ETokenType.Number))
-            return new ConstantNode(parseInt(tokenizer.currentString));
+            return new ConstantNode(parseInt(number));
 
         // String
         const identifier = tokenizer.currentString;
@@ -149,7 +177,13 @@ export class Analyser {
 
             // Variable
             const variableName = tokenizer.currentString;
-            if (!tokenizer.match(ETokenType.Identifier)) return new VariableNode(variableOrTypeOrKeyword);
+            const currentToken = tokenizer.currentToken;
+            if (!tokenizer.match(ETokenType.Identifier)) {
+                if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
+                    return new VariableNode(variableOrTypeOrKeyword, null, currentToken);
+                
+                return new VariableNode(variableOrTypeOrKeyword);
+            }
 
             // Definition
             if (!tokenizer.match(ETokenType.Equal)) return new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, null);
@@ -197,9 +231,12 @@ export class Analyser {
      */
     public getKeyword(keyword: string, tokenizer: Tokenizer): Node {
         switch (keyword) {
-            case "return": return new ReturnNode(this.getSuperExpression(tokenizer));
+            // Return
+            case "return":
+                return new ReturnNode(this.getSuperExpression(tokenizer));
+            // If
             case "if":
-                const condition = this.getSuperExpression(tokenizer);
+                const ifCondition = this.getSuperExpression(tokenizer);
                 const ifTrue = (tokenizer.match(ETokenType.OpenBrace)) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer);
 
                 // Else?
@@ -209,18 +246,42 @@ export class Analyser {
 
                     if (tokenizer.match(ETokenType.OpenBrace)) {
                         // Just else
-                        return new IfNode(condition, ifTrue, this.getBlock(tokenizer));
+                        return new IfNode(ifCondition, ifTrue, this.getBlock(tokenizer));
                     } else if (secondKeyword === "if" && tokenizer.match(ETokenType.Identifier)) {
                         // Else if
-                        return new IfNode(condition, ifTrue, this.getKeyword(secondKeyword, tokenizer));
+                        return new IfNode(ifCondition, ifTrue, this.getKeyword(secondKeyword, tokenizer));
                     } else {
                         // No braces
-                        return new IfNode(condition, ifTrue, this.getSuperExpression(tokenizer));
+                        return new IfNode(ifCondition, ifTrue, this.getSuperExpression(tokenizer));
                     }
                 }
 
-                return new IfNode(condition, ifTrue, null);
-            default: return new ErrorNode(`Keyword "${keyword}" not supported`);
+                return new IfNode(ifCondition, ifTrue, null);
+            // While
+            case "while":
+                const whileCondition = this.getSuperExpression(tokenizer);
+                const whileRight = tokenizer.match(ETokenType.OpenBrace) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer);
+                return new WhileNode(whileCondition, whileRight);
+            // For
+            case "for":
+                if (!tokenizer.match(ETokenType.OpenPar)) return new ErrorNode("Expected an opening parenthesis");
+
+                const forInitalization = (!tokenizer.match(ETokenType.SemiColon)) ? this.getSuperExpression(tokenizer) : null;
+                const condition = (!tokenizer.match(ETokenType.SemiColon)) ? this.getSuperExpression(tokenizer) : null;
+                const step = (!tokenizer.match(ETokenType.ClosePar)) ? this.getSuperExpression(tokenizer) : null;
+                
+                if (step && !tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
+
+                const block = (tokenizer.match(ETokenType.OpenBrace)) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer);
+                
+                return new ForNode(block, forInitalization, condition, step);
+            // Break
+            case "break":
+                return new BreakNode();
+            
+            // Not supported
+            default:
+                return new ErrorNode(`Keyword "${keyword}" not supported`);
         }
     }
 

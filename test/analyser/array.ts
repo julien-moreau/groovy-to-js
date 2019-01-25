@@ -1,7 +1,7 @@
 import * as assert from "assert";
 
 import { Analyser } from "../../src/analyser/analyser";
-import { ArrayNode } from "../../src/nodes/arrayNode";
+import { ArrayNode } from "../../src/nodes/array";
 import { ConstantNode } from "../../src/nodes/constant";
 import { TernaryNode } from "../../src/nodes/ternary";
 

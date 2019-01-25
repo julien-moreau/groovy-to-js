@@ -7,10 +7,15 @@ export enum ENodeType {
     Variable = 4,
     VariableDeclaration = 5,
     Array = 6,
+    Comparison = 7,
+    Assign = 8,
 
     // Keywords
     Return = 100,
     If = 101,
+    While = 102,
+    For = 103,
+    Break = 104,
 
     Block = 200,
 

@@ -120,4 +120,9 @@ describe("Analyser", () => {
         assert(a.ifTrue instanceof ConstantNode && a.ifTrue.value === 2);
         assert(a.ifFalse instanceof ConstantNode && a.ifFalse.value === 3);
     });
+
+    it("should parse a self minus operation", () => {
+        const a = new Analyser("a--").analyse() as VariableNode;
+        assert(a instanceof VariableNode && a.postOperator === ETokenType.SelfMinus);
+    });
 });

@@ -86,4 +86,57 @@ describe("Executed converter", () => {
                 return 1;
         `, 1));
     });
+
+    it("should use the while loop", () => {
+        assert(execute(`
+            def a = 3;
+            while (a > 0) {
+                a--;
+            }
+
+            return a;
+        `, 0));
+    });
+
+    it("should use the for loop", () => {
+        assert(execute(`
+            def a = 0;
+            for (def i = 0; i < 3; i++) {
+                a++;
+            }
+
+            return a;
+        `, 3));
+    });
+
+    it("should use a for loop with empty initialization", () => {
+        assert(execute(`
+            def a = 0;
+            for (; a < 3; a++) { }
+
+            return a;
+        `, 3));
+    });
+
+    it("should use a for loop with empty step", () => {
+        assert(execute(`
+            def a = 0;
+            for (; ; a++) {
+                break;
+            }
+
+            return a;
+        `, 0));
+    });
+
+    it("should use a for ever for loop", () => {
+        assert(execute(`
+            def a = 0;
+            for (;;) {
+                break;
+            }
+
+            return a;
+        `, 0));
+    });
 });
