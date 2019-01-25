@@ -5,6 +5,7 @@ export enum ENodeType {
     IfNode = 3,
     Variable = 4,
     VariableDeclaration = 5,
+    Array = 6,
     Error = 100
 }
 

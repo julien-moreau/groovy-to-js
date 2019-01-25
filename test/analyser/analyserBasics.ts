@@ -1,12 +1,12 @@
 import * as assert from "assert";
 
-import { Analyser } from "../src/analyser/analyser";
-import { ETokenType } from "../src/tokenizer/tokenizer";
+import { Analyser } from "../../src/analyser/analyser";
+import { ETokenType } from "../../src/tokenizer/tokenizer";
 
-import { BinaryOperatorNode } from "../src/nodes/binaryOperator";
-import { VariableDeclarationNode } from "../src/nodes/variableDeclaration";
-import { ConstantNode } from "../src/nodes/constant";
-import { IfNode } from "../src/nodes/ifNode";
+import { BinaryOperatorNode } from "../../src/nodes/binaryOperator";
+import { VariableDeclarationNode } from "../../src/nodes/variableDeclaration";
+import { ConstantNode } from "../../src/nodes/constant";
+import { IfNode } from "../../src/nodes/ifNode";
 
 describe("Analyser", () => {
     it("should return a binary operator node when 2 constants", () => {

@@ -15,7 +15,7 @@ export class VariableDeclarationNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        if (!this.value) return `var ${this.name}`;
+        if (!this.value) return `var ${this.name};`;
         return `var ${this.name} = ${this.value.toString()};`;
     }
 }

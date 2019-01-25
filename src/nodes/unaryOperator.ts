@@ -11,9 +11,20 @@ export class UnaryOperatorNode extends Node {
     }
 
     /**
+     * Returns the operator string
+     */
+    public get operatorString(): string {
+        switch (this.operator) {
+            case ETokenType.Minus: return "-";
+            case ETokenType.Plus: return "+";
+            default: throw new Error("Invalid Operator.");
+        }
+    }
+
+    /**
      * Returns the node's string
      */
     public toString(): string {
-        return `-${this.right.toString()}`;
+        return `${this.operatorString}(${this.right.toString()})`;
     }
 }

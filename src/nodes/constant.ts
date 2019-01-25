@@ -1,11 +1,13 @@
 import { Node, ENodeType } from "./node";
 
+export type PrimitiveType = number | string | boolean;
+
 export class ConstantNode extends Node {
     /**
      * Constructor
      * @param data the unary operator data
      */
-    constructor(public readonly value: number | string | boolean) {
+    constructor(public readonly value: PrimitiveType | PrimitiveType[]) {
         super(ENodeType.Constant);
     }
 
@@ -13,6 +15,6 @@ export class ConstantNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        return this.value.toString();
+        return `${this.value.toString()}`;
     }
 }

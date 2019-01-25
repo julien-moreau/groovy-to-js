@@ -24,9 +24,24 @@ export class BinaryOperatorNode extends Node {
     }
 
     /**
+     * Returns the method name assigned to the current operator
+     */
+    public get operatorMethodString(): string {
+        switch (this.operator) {
+            case ETokenType.Minus: return "subtract";
+            case ETokenType.Plus: return "add";
+            case ETokenType.Mult: return "multiply";
+            default: return this.operatorString;
+        }
+    }
+
+    /**
      * Returns the node's string
      */
     public toString(): string {
-        return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+        if (this.left.nodeType !== ENodeType.Array && this.right.nodeType !== ENodeType.Array)
+            return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+
+        return `${this.operatorMethodString}(${this.left.toString()}, ${this.right.toString()})`;
     }
 }

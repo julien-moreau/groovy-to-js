@@ -1,4 +1,4 @@
-import { Tokenizer, ETokenType } from "../src/tokenizer/tokenizer";
+import { Tokenizer, ETokenType } from "../../src/tokenizer/tokenizer";
 import * as assert from "assert";
 
 describe("Tokenizer", () => {

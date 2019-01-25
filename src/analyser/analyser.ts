@@ -1,5 +1,7 @@
 import { Tokenizer, ETokenType } from "../tokenizer/tokenizer";
+import { naviveTypes } from "./dictionary";
 
+// Nodes
 import { Node } from "../nodes/node";
 import { UnaryOperatorNode } from "../nodes/unaryOperator";
 import { ConstantNode } from "../nodes/constant";
@@ -7,8 +9,8 @@ import { ErrorNode } from "../nodes/error";
 import { BinaryOperatorNode } from "../nodes/binaryOperator";
 import { IfNode } from "../nodes/ifNode";
 import { VariableNode } from "../nodes/variable";
-import { naviveTypes } from "./dictionary";
 import { VariableDeclarationNode } from "../nodes/variableDeclaration";
+import { ArrayNode } from "../nodes/arrayNode";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
@@ -51,7 +53,7 @@ export class Analyser {
         // Variable declaration
         const variableType = tokenizer.currentString;
         if (tokenizer.match(ETokenType.Identifier)) {
-            if (naviveTypes.indexOf(variableType) === -1) return new ErrorNode("");
+            if (naviveTypes.indexOf(variableType) === -1) return new ErrorNode(`Unkwnown type: ${variableType}`);
 
             const variableName = tokenizer.currentString;
             if (!tokenizer.match(ETokenType.Identifier)) return new ErrorNode("Expected a variable name");
@@ -84,23 +86,30 @@ export class Analyser {
         while(!tokenizer.isEnd && !(left instanceof ErrorNode)) {
             const operator = tokenizer.currentToken;
 
-            if (!tokenizer.match(ETokenType.Plus) && !tokenizer.match(ETokenType.Minus)) break;
-            left = new BinaryOperatorNode(operator, left, this.getTerm(tokenizer));
+            // + or -
+            if (tokenizer.match(ETokenType.Plus) || tokenizer.match(ETokenType.Minus)) {
+                left = new BinaryOperatorNode(operator, left, this.getTerm(tokenizer));
+                continue;
+            }
+
+            break;
         }
 
         return left;
     }
 
     /**
-     * Returns a node which defines a term
+     * Returns the node which defines a term
      * @param tokenizer the tokenizer reference
      */
     public getTerm(tokenizer: Tokenizer): Node {
         let left = this.getFactor(tokenizer);
         while (!(left instanceof ErrorNode)) {
+            // * or /
             const operator = tokenizer.currentToken;
             if(tokenizer.match(ETokenType.Mult) || tokenizer.match(ETokenType.Div)) {
                 left = new BinaryOperatorNode(operator, left, this.getFactor(tokenizer));
+                continue;
             }
 
             break;
@@ -122,7 +131,7 @@ export class Analyser {
     }
 
     /**
-     * Returns a node which has no unary expression
+     * Returns the node which has no unary expression
      * @param tokenizer the tokenizer reference
      * @example positive factor: "2", "variable", "(...)"
      */
@@ -137,11 +146,34 @@ export class Analyser {
         if (tokenizer.match(ETokenType.Identifier))
             return new VariableNode(identifier);
 
+        // Array
+        if (tokenizer.match(ETokenType.OpenBracket)) {
+            if (tokenizer.match(ETokenType.CloseBracket)) return new ArrayNode([]);
+
+            const l = this.getList(tokenizer);
+            if (!tokenizer.match(ETokenType.CloseBracket)) return new ErrorNode("Expected a closing backet");
+            return new ArrayNode(l);
+        }
+
         // Super expression
         if (!tokenizer.match(ETokenType.OpenPar)) return new ErrorNode("Expected constant or identifier or opening parenthesis");
         const e = this.getSuperExpression(tokenizer);
         if (e  instanceof ErrorNode) return e;
         if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected closing parenthesis.");
         return e;
+    }
+
+    /**
+     * Returns the array of nodes being listed
+     * @param tokenizer the tokenizer reference
+     */
+    public getList(tokenizer: Tokenizer): Node[] {
+        const list: Node[] = [this.getSuperExpression(tokenizer)];
+
+        while (tokenizer.match(ETokenType.Comma)) {
+            list.push(this.getSuperExpression(tokenizer));
+        }
+
+        return list;
     }
 }

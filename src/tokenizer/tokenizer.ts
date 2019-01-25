@@ -22,6 +22,7 @@ export enum ETokenType {
     Colon = 2,
     Equal = 3,
     Equality = 4,
+    Comma = 5,
 
     EndOfInput = 1 << 30,
     Error = 1 << 31
@@ -136,6 +137,7 @@ export class Tokenizer {
 
             case "?": return (this._type = ETokenType.QuestionMark);
             case ":": return (this._type = ETokenType.Colon);
+            case ",": return (this._type = ETokenType.Comma);
 
             default:
                 //4- Non terminals
