@@ -1,5 +1,11 @@
 import { Node, ENodeType } from "../node";
 import { ETokenType } from "../../tokenizer/tokenizer";
+import { ConstantNode } from "../variables/constant";
+
+const unsupportedTypes: string[] = [
+    "any",
+    "def"
+];
 
 export class BinaryOperatorNode extends Node {
     /**
@@ -40,7 +46,8 @@ export class BinaryOperatorNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        if (this.operator !== ETokenType.SpaceShip && this.left.nodeType !== ENodeType.Array && this.right.nodeType !== ENodeType.Array)
+        // Simple?
+        if (this.operator !== ETokenType.SpaceShip && this.left instanceof ConstantNode && this.right instanceof ConstantNode)
             return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
 
         return `${this.operatorMethodString}(${this.left.toString()}, ${this.right.toString()})`;

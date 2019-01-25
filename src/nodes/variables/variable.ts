@@ -6,7 +6,7 @@ export class VariableNode extends Node {
      * Constructor
      * @param name: the variable's name
      */
-    constructor(public name: string, public preOperator: ETokenType = null, public postOperator: ETokenType = null) {
+    constructor(public name: string, public preOperator: ETokenType = null, public postOperator: ETokenType = null, public type: string = "any") {
         super(ENodeType.Variable);
     }
 

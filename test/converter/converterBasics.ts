@@ -24,7 +24,7 @@ describe("Converter", () => {
     });
 
     it("should convert an assignation", () => {
-        assert(convert("a = a + 1") === "a = (a + 1)".replace(/n/g, ""));
+        assert(convert("a = a + 1") === "a = add(a, 1)".replace(/n/g, ""));
     });
 
     it("should convert spaceship operator", () => {

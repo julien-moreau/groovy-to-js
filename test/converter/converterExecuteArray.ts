@@ -6,7 +6,7 @@ import { add, subtract, multiply } from "../../src/augmentations/operators";
 
 const template = `
 (function() {
-    {{code}}
+{{code}}
 })();
 `;
 
@@ -40,5 +40,14 @@ describe("Executed converter", () => {
 
     it("should multiply arrays", () => {
         execute("[1, 2] * 2", [1, 2, 1, 2]);
+    });
+
+    it("should subtract or add with variables", () => {
+        execute(`
+            def a = [1, 2, 3];
+            def b = [2, 3];
+
+            (a + b) - b - b;
+        `, [1]);
     });
 });

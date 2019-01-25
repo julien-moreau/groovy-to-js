@@ -1,5 +1,6 @@
 import { Tokenizer, ETokenType } from "../tokenizer/tokenizer";
 import { keywords } from "./dictionary";
+import { Scope } from "./scope";
 
 // Nodes
 import { Node } from "../nodes/node";
@@ -25,7 +26,9 @@ import { LogicNode } from "../nodes/operators/logicOperator";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
-    private _root: Node;
+    private _scopes: Scope[];
+
+    private _root: Node = null;
 
     /**
      * Constructor
@@ -33,6 +36,7 @@ export class Analyser {
      */
     constructor(str: string) {
         this._tokenizer = new Tokenizer(str);
+        this._scopes = [new Scope()];
     }
 
     /**
@@ -54,6 +58,10 @@ export class Analyser {
      */
     public get isEnd(): boolean {
         return this._tokenizer.isEnd;
+    }
+
+    public get currentScope(): Scope {
+        return this._scopes[this._scopes.length - 1];
     }
 
     /**
@@ -161,7 +169,8 @@ export class Analyser {
         if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus)) {
             const variableName = tokenizer.currentString;
             if (!tokenizer.match(ETokenType.Identifier)) return new ErrorNode("Expected an identifier");
-            return new VariableNode(variableName, currentToken);
+
+            return new VariableNode(variableName, currentToken, null, this.currentScope.getVariableType(variableName));
         }
 
         return this.getPositiveFactor(tokenizer);
@@ -194,14 +203,22 @@ export class Analyser {
             const currentToken = tokenizer.currentToken;
             if (!tokenizer.match(ETokenType.Identifier)) {
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
-                    return new VariableNode(variableOrTypeOrKeyword, null, currentToken);
+                    return new VariableNode(variableOrTypeOrKeyword, null, currentToken, this.currentScope.getVariableType(variableOrTypeOrKeyword));
                 
-                return new VariableNode(variableOrTypeOrKeyword);
+                return new VariableNode(variableOrTypeOrKeyword, null, null, this.currentScope.getVariableType(variableOrTypeOrKeyword));
             }
 
             // Definition
-            if (!tokenizer.match(ETokenType.Equal)) return new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, null);
-            return new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, this.getSuperExpression(tokenizer));
+            let variableDeclaration: VariableDeclarationNode = null;
+
+            if (!tokenizer.match(ETokenType.Equal)) {
+                variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, null);
+            } else {
+                variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, this.getSuperExpression(tokenizer));
+            }
+
+            this.currentScope.variables.push(variableDeclaration);
+            return variableDeclaration;
         }
 
         // Array
@@ -308,12 +325,23 @@ export class Analyser {
         }
     }
 
+    /**
+     * Returns a block containing all the expressions inside the block
+     * delimited by "{" and "}"
+     * @param tokenizer the tokenizer reference
+     */
     public getBlock(tokenizer: Tokenizer): Node {
-        const nodes: Node[] = [];
+        // Push a new scope
+        this._scopes.push(new Scope(this.currentScope));
 
+        // Get block's nodes
+        const nodes: Node[] = [];
         while (!tokenizer.match(ETokenType.CloseBrace)) {
             nodes.push(this.getSuperExpression(tokenizer));
         }
+
+        // Remove scope
+        this._scopes.pop();
 
         return new BlockNode(nodes);
     }
