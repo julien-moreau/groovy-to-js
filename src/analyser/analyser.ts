@@ -304,13 +304,19 @@ export class Analyser {
                 if (!tokenizer.match(ETokenType.OpenPar)) return new ErrorNode("Expected an opening parenthesis");
 
                 const forInitalization = (!tokenizer.match(ETokenType.SemiColon)) ? this.getSuperExpression(tokenizer) : null;
+                if (forInitalization instanceof ErrorNode) return forInitalization;
+
                 const forCondition = (!tokenizer.match(ETokenType.SemiColon)) ? this.getSuperExpression(tokenizer) : null;
+                if (forCondition instanceof ErrorNode) return forCondition;
+
                 const forStep = (!tokenizer.match(ETokenType.ClosePar)) ? this.getSuperExpression(tokenizer) : null;
-                
+                if (forStep instanceof ErrorNode) return forStep;
+
                 if (forStep && !tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
 
                 const forBlock = (tokenizer.match(ETokenType.OpenBrace)) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer);
-                
+                if (forBlock instanceof ErrorNode) return forBlock;
+
                 return new ForNode(forBlock, forInitalization, forCondition, forStep);
             // Do
             case "do":
