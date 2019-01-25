@@ -1,12 +1,22 @@
 export enum ENodeType {
+    // Basic
     Constant = 0,
     UnaryOperator = 1,
     BinaryOperator = 2,
-    IfNode = 3,
+    Ternary = 3,
     Variable = 4,
     VariableDeclaration = 5,
     Array = 6,
-    Error = 100
+
+    // Keywords
+    Return = 100,
+    If = 101,
+
+    Block = 200,
+
+    // Special
+    EndOfInstruction = 1000,
+    Error = 1001
 }
 
 export class Node {

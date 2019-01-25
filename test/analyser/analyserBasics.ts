@@ -6,7 +6,7 @@ import { ETokenType } from "../../src/tokenizer/tokenizer";
 import { BinaryOperatorNode } from "../../src/nodes/binaryOperator";
 import { VariableDeclarationNode } from "../../src/nodes/variableDeclaration";
 import { ConstantNode } from "../../src/nodes/constant";
-import { IfNode } from "../../src/nodes/ifNode";
+import { TernaryNode } from "../../src/nodes/ternary";
 import { VariableNode } from "../../src/nodes/variable";
 
 describe("Analyser", () => {
@@ -98,24 +98,24 @@ describe("Analyser", () => {
     });
 
     it("should parse ternary", () => {
-        const a = new Analyser("1 ? 2 : 3").analyse() as IfNode;
-        assert(a instanceof IfNode);
+        const a = new Analyser("1 ? 2 : 3").analyse() as TernaryNode;
+        assert(a instanceof TernaryNode);
         assert(a.condition instanceof ConstantNode && a.condition.value === 1);
         assert(a.ifTrue instanceof ConstantNode && a.ifTrue.value === 2);
         assert(a.ifFalse instanceof ConstantNode && a.ifFalse.value === 3);
     });
 
     it("should parse ternary even parenthetized", () => {
-        const a = new Analyser("(1 ? 2 : 3)").analyse() as IfNode;
-        assert(a instanceof IfNode);
+        const a = new Analyser("(1 ? 2 : 3)").analyse() as TernaryNode;
+        assert(a instanceof TernaryNode);
         assert(a.condition instanceof ConstantNode && a.condition.value === 1);
         assert(a.ifTrue instanceof ConstantNode && a.ifTrue.value === 2);
         assert(a.ifFalse instanceof ConstantNode && a.ifFalse.value === 3);
     });
 
     it("should parse ternary even double parenthetized", () => {
-        const a = new Analyser("((1 ? 2 : 3))").analyse() as IfNode;
-        assert(a instanceof IfNode);
+        const a = new Analyser("((1 ? 2 : 3))").analyse() as TernaryNode;
+        assert(a instanceof TernaryNode);
         assert(a.condition instanceof ConstantNode && a.condition.value === 1);
         assert(a.ifTrue instanceof ConstantNode && a.ifTrue.value === 2);
         assert(a.ifFalse instanceof ConstantNode && a.ifFalse.value === 3);

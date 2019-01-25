@@ -3,7 +3,7 @@ import * as assert from "assert";
 import { Analyser } from "../../src/analyser/analyser";
 import { ArrayNode } from "../../src/nodes/arrayNode";
 import { ConstantNode } from "../../src/nodes/constant";
-import { IfNode } from "../../src/nodes/ifNode";
+import { TernaryNode } from "../../src/nodes/ternary";
 
 describe("Array", () => {
     it("should return an array node which has 0 elements", () => {
@@ -25,6 +25,6 @@ describe("Array", () => {
     it("should return an array node with ternary nodes in its elements", () => {
         const a = new Analyser("[(1 ? 2 : 3), 2 ? 3 : 4]").analyse() as ArrayNode;
         assert(a instanceof ArrayNode && a.elements.length === 2);
-        a.elements.forEach(e => assert(e instanceof IfNode));
+        a.elements.forEach(e => assert(e instanceof TernaryNode));
     });
 });

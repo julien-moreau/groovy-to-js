@@ -1,18 +1,32 @@
 import { Node, ENodeType } from "./node";
 
+const templateSingle = 
+`if ({{condition}})
+    {{ifTrue}}`
+
+const templateFull = 
+`if ({{condition}})
+    {{ifTrue}}
+else
+    {{ifFalse}}`
+
 export class IfNode extends Node {
     /**
      * Constructor
      * @param data the binary operator data
      */
     constructor(public condition: Node, public ifTrue: Node, public ifFalse: Node) {
-        super(ENodeType.IfNode);
+        super(ENodeType.Ternary);
     }
 
     /**
      * Returns the node's string
      */
     public toString(): string {
-        return `${this.condition.toString()} ? ${this.ifTrue.toString()} : ${this.ifFalse.toString()}`;
+        const base = this.ifFalse ? templateFull : templateSingle;
+        return base
+            .replace("{{condition}}", this.condition.toString())
+            .replace("{{ifTrue}}", this.ifTrue.toString())
+            .replace("{{ifFalse}}", (this.ifFalse || "").toString());
     }
 }

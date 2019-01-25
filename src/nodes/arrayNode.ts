@@ -1,4 +1,5 @@
 import { Node, ENodeType } from "./node";
+
 export class ArrayNode extends Node {
     /**
      * Constructor

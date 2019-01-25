@@ -1,5 +1,5 @@
 import { Tokenizer, ETokenType } from "../tokenizer/tokenizer";
-import { naviveTypes } from "./dictionary";
+import { keywords } from "./dictionary";
 
 // Nodes
 import { Node } from "../nodes/node";
@@ -7,10 +7,14 @@ import { UnaryOperatorNode } from "../nodes/unaryOperator";
 import { ConstantNode } from "../nodes/constant";
 import { ErrorNode } from "../nodes/error";
 import { BinaryOperatorNode } from "../nodes/binaryOperator";
-import { IfNode } from "../nodes/ifNode";
+import { TernaryNode } from "../nodes/ternary";
 import { VariableNode } from "../nodes/variable";
 import { VariableDeclarationNode } from "../nodes/variableDeclaration";
 import { ArrayNode } from "../nodes/arrayNode";
+import { EndOfInstructionNode } from "../nodes/endOfInstruction";
+import { ReturnNode } from "../nodes/return";
+import { IfNode } from "../nodes/ifNode";
+import { BlockNode } from "../nodes/block";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
@@ -53,6 +57,9 @@ export class Analyser {
         // Expression
         const e = this.getExpression(tokenizer);
 
+        // Semicolon
+        if (tokenizer.match(ETokenType.SemiColon)) return new EndOfInstructionNode(e);
+
         // Ternary
         if (!tokenizer.match(ETokenType.QuestionMark))
             return e;
@@ -62,7 +69,8 @@ export class Analyser {
             return new ErrorNode("Expected ':'.");
         
         const ifFalse = this.getExpression(tokenizer);
-        return new IfNode(e, ifTrue, ifFalse);
+        const ternary = new TernaryNode(e, ifTrue, ifFalse);
+        return tokenizer.match(ETokenType.SemiColon) ? new EndOfInstructionNode(ternary) : ternary;
     }
 
     /**
@@ -134,15 +142,18 @@ export class Analyser {
             return new ConstantNode(identifier);
 
         // Identifier
-        const variableOrType = tokenizer.currentString;
+        const variableOrTypeOrKeyword = tokenizer.currentString;
         if (tokenizer.match(ETokenType.Identifier)) {
+            // Keyword?
+            if (keywords.indexOf(variableOrTypeOrKeyword) !== -1) return this.getKeyword(variableOrTypeOrKeyword, tokenizer);
+
             // Variable
             const variableName = tokenizer.currentString;
-            if (!tokenizer.match(ETokenType.Identifier)) return new VariableNode(variableOrType);
+            if (!tokenizer.match(ETokenType.Identifier)) return new VariableNode(variableOrTypeOrKeyword);
 
             // Definition
-            if (!tokenizer.match(ETokenType.Equal)) return new VariableDeclarationNode(variableOrType, variableName, null);
-            return new VariableDeclarationNode(variableOrType, variableName, this.getSuperExpression(tokenizer));
+            if (!tokenizer.match(ETokenType.Equal)) return new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, null);
+            return new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, this.getSuperExpression(tokenizer));
         }
 
         // Array
@@ -157,22 +168,69 @@ export class Analyser {
         // Super expression
         if (!tokenizer.match(ETokenType.OpenPar)) return new ErrorNode("Expected constant or identifier or opening parenthesis");
         const e = this.getSuperExpression(tokenizer);
-        if (e  instanceof ErrorNode) return e;
+        if (e instanceof ErrorNode) return e;
         if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected closing parenthesis.");
         return e;
     }
 
     /**
-     * Returns the array of nodes being listed
+     * Returns the array of nodes being listed, separated by commas
      * @param tokenizer the tokenizer reference
+     * @example "1, 2,3, 'coucou', []" etc.
      */
     public getList(tokenizer: Tokenizer): Node[] {
         const list: Node[] = [this.getSuperExpression(tokenizer)];
 
         while (tokenizer.match(ETokenType.Comma)) {
-            list.push(this.getSuperExpression(tokenizer));
+            const e = this.getSuperExpression(tokenizer);
+            if (e instanceof ErrorNode) return [e];
+            list.push(e);
         }
 
         return list;
+    }
+
+    /**
+     * Returns the associated keyword node
+     * @param keyword the current keyword being analysed
+     * @param tokenizer the tokenizer reference
+     */
+    public getKeyword(keyword: string, tokenizer: Tokenizer): Node {
+        switch (keyword) {
+            case "return": return new ReturnNode(this.getSuperExpression(tokenizer));
+            case "if":
+                const condition = this.getSuperExpression(tokenizer);
+                const ifTrue = (tokenizer.match(ETokenType.OpenBrace)) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer);
+
+                // Else?
+                const firstKeyword = tokenizer.currentString;
+                if (tokenizer.getNextToken() && firstKeyword === "else") {
+                    const secondKeyword = tokenizer.currentString;
+
+                    if (tokenizer.match(ETokenType.OpenBrace)) {
+                        // Just else
+                        return new IfNode(condition, ifTrue, this.getBlock(tokenizer));
+                    } else if (secondKeyword === "if" && tokenizer.match(ETokenType.Identifier)) {
+                        // Else if
+                        return new IfNode(condition, ifTrue, this.getKeyword(secondKeyword, tokenizer));
+                    } else {
+                        // No braces
+                        return new IfNode(condition, ifTrue, this.getSuperExpression(tokenizer));
+                    }
+                }
+
+                return new IfNode(condition, ifTrue, null);
+            default: return new ErrorNode(`Keyword "${keyword}" not supported`);
+        }
+    }
+
+    public getBlock(tokenizer: Tokenizer): Node {
+        const nodes: Node[] = [];
+
+        while (!tokenizer.match(ETokenType.CloseBrace)) {
+            nodes.push(this.getSuperExpression(tokenizer));
+        }
+
+        return new BlockNode(nodes);
     }
 }

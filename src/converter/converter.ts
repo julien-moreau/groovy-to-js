@@ -1,4 +1,7 @@
+import * as beautifier from 'js-beautify';
+
 import { Analyser } from "../analyser/analyser";
+import { ENodeType } from "../nodes/node";
 
 /**
  * Converts the given groovy code to JavaScript code
@@ -10,8 +13,11 @@ export function convert(groovyCode: string): string {
 
     while (!a.isEnd) {
         const n = a.analyse();
+        if (n.nodeType === ENodeType.Error)
+            throw new Error(n.toString());
+
         result.push(n.toString());
     }
 
-    return result.join("\n");
+    return beautifier.js_beautify(result.join("\n"));
 }
