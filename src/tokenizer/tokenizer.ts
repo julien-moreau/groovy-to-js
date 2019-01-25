@@ -15,6 +15,8 @@ export enum ETokenType {
     Not = IsBinaryOperator + 5,
     SelfMinus = IsBinaryOperator + 6,
     SelfPlus = IsBinaryOperator + 7,
+    BitwiseLeft = IsBinaryOperator + 8,
+    BitwiseRight = IsBinaryOperator + 9,
 
     And = IsLogicOperator + 0,
     Or = IsLogicOperator + 1,
@@ -248,6 +250,10 @@ export class Tokenizer {
                             this._buffer += c;
                             this.forward();
                         }
+                    } else if (c === "<") {
+                        this._type = ETokenType.BitwiseLeft;
+                        this._buffer += c;
+                        this.forward();
                     }
                 }
                 // Superior
@@ -257,6 +263,10 @@ export class Tokenizer {
 
                     if ((c = this.peek()) === "=") {
                         this._type = ETokenType.SuperiorOrEqual;
+                        this._buffer += c;
+                        this.forward();
+                    } else if (c === ">") {
+                        this._type = ETokenType.BitwiseRight;
                         this._buffer += c;
                         this.forward();
                     }

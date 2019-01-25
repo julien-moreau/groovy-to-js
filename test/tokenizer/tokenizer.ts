@@ -61,4 +61,16 @@ describe("Tokenizer", () => {
         assert.equal(t.currentToken, ETokenType.Or);
         assert.equal(t.currentString, "||");
     });
+
+    it("should return a bitwise left", () => {
+        const t = new Tokenizer("<<");
+        assert.equal(t.currentToken, ETokenType.BitwiseLeft);
+        assert.equal(t.currentString, "<<");
+    });
+
+    it("should return a bitwise right", () => {
+        const t = new Tokenizer(">>");
+        assert.equal(t.currentToken, ETokenType.BitwiseRight);
+        assert.equal(t.currentString, ">>");
+    });
 });

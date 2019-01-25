@@ -60,4 +60,9 @@ describe("Converter", () => {
         assert(convert("1 > 0") === "1 > 0".replace(/n/g, ""));
         assert(convert("1 >= 0") === "1 >= 0".replace(/n/g, ""));
     });
+
+    it("should use bitwise operators", () => {
+        assert(convert("1 << 0") === "(1 << 0)".replace(/n/g, ""));
+        assert(convert("1 >> 0") === "(1 >> 0)".replace(/n/g, ""));
+    });
 });

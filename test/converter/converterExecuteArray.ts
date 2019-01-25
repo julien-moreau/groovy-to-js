@@ -2,19 +2,13 @@ import * as assert from "assert";
 import * as vm from 'vm';
 
 import { convert } from "../../src/converter/converter";
-import { add, subtract, multiply } from "../../src/augmentations/operators";
-
-const template = `
-(function() {
-{{code}}
-})();
-`;
+import { add, subtract, multiply, bitwiseLeft } from "../../src/augmentations/operators";
 
 const execute = (str: string, expected: any[]) => {
     const result = convert(str);
 
     const context = vm.createContext();
-    Object.assign(context, { add, subtract, multiply });
+    Object.assign(context, { add, subtract, multiply, bitwiseLeft });
 
     const script = new vm.Script(result);
     const actual = script.runInContext(context) as any[];
@@ -49,5 +43,9 @@ describe("Executed converter", () => {
 
             (a + b) - b - b;
         `, [1]);
+    });
+
+    it("should use bitwise left", () => {
+        execute("[2] << 1", [2, 1]);
     });
 });

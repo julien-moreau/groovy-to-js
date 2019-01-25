@@ -121,6 +121,12 @@ export class Analyser {
                 continue;
             }
 
+            // "<<" or ">>"
+            if (tokenizer.match(ETokenType.BitwiseLeft) || tokenizer.match(ETokenType.BitwiseRight)) {
+                left = new BinaryOperatorNode(operator, left, this.getSuperExpression(tokenizer));
+                continue;
+            }
+
             break;
         }
 

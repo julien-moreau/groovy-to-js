@@ -25,6 +25,8 @@ export class BinaryOperatorNode extends Node {
             case ETokenType.Plus: return "+";
             case ETokenType.Mult: return "*";
             case ETokenType.Div: return "/";
+            case ETokenType.BitwiseLeft: return "<<";
+            case ETokenType.BitwiseRight: return ">>";
             default: throw new Error("Invalid Operator.");
         }
     }
@@ -38,6 +40,7 @@ export class BinaryOperatorNode extends Node {
             case ETokenType.Plus: return "add";
             case ETokenType.Mult: return "multiply";
             case ETokenType.SpaceShip: return "spaceship";
+            case ETokenType.BitwiseLeft: return "bitwiseLeft";
             default: return this.operatorString;
         }
     }

@@ -81,7 +81,7 @@ export function multiply(a: string | number | any[], b: string | number | any[])
  * @param a the array or the string
  * @param b the value
  */
-export function insert(a: string | number | any[], b: string | number | any[]): string | number | any[] {
+export function bitwiseLeft(a: string | number | any[], b: string | number | any[]): string | number | any[] {
     if (typeof a === "string") {
         return a + b;
     }
