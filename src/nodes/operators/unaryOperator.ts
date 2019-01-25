@@ -1,5 +1,5 @@
-import { Node, ENodeType } from "./node";
-import { ETokenType } from "../tokenizer/tokenizer";
+import { Node, ENodeType } from "../node";
+import { ETokenType } from "../../tokenizer/tokenizer";
 
 export class UnaryOperatorNode extends Node {
     /**

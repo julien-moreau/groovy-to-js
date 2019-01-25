@@ -3,24 +3,24 @@ import { keywords } from "./dictionary";
 
 // Nodes
 import { Node } from "../nodes/node";
-import { UnaryOperatorNode } from "../nodes/unaryOperator";
-import { ConstantNode } from "../nodes/constant";
+import { UnaryOperatorNode } from "../nodes/operators/unaryOperator";
+import { ConstantNode } from "../nodes/variables/constant";
 import { ErrorNode } from "../nodes/error";
-import { BinaryOperatorNode } from "../nodes/binaryOperator";
-import { TernaryNode } from "../nodes/ternary";
-import { VariableNode } from "../nodes/variable";
-import { VariableDeclarationNode } from "../nodes/variableDeclaration";
-import { ArrayNode } from "../nodes/array";
+import { BinaryOperatorNode } from "../nodes/operators/binaryOperator";
+import { TernaryNode } from "../nodes/logic/ternary";
+import { VariableNode } from "../nodes/variables/variable";
+import { VariableDeclarationNode } from "../nodes/variables/variableDeclaration";
+import { ArrayNode } from "../nodes/types/array";
 import { EndOfInstructionNode } from "../nodes/endOfInstruction";
-import { ReturnNode } from "../nodes/return";
-import { IfNode } from "../nodes/ifNode";
+import { ReturnNode } from "../nodes/keywords/return";
+import { IfNode } from "../nodes/keywords/ifNode";
 import { BlockNode } from "../nodes/block";
-import { ComparisonNode } from "../nodes/comparison";
-import { WhileNode } from "../nodes/while";
-import { AssignNode } from "../nodes/assign";
-import { ForNode } from "../nodes/for";
-import { BreakNode } from "../nodes/break";
-import { DoNode } from "../nodes/do";
+import { ComparisonNode } from "../nodes/logic/comparison";
+import { WhileNode } from "../nodes/loops/while";
+import { AssignNode } from "../nodes/variables/assign";
+import { ForNode } from "../nodes/loops/for";
+import { BreakNode } from "../nodes/keywords/break";
+import { DoNode } from "../nodes/loops/do";
 
 export class Analyser {
     private _tokenizer: Tokenizer;

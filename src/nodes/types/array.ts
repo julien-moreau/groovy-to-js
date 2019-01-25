@@ -1,4 +1,4 @@
-import { Node, ENodeType } from "./node";
+import { Node, ENodeType } from "../node";
 
 export class ArrayNode extends Node {
     /**

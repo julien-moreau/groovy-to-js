@@ -1,9 +1,9 @@
 import * as assert from "assert";
 
 import { Analyser } from "../../src/analyser/analyser";
-import { ArrayNode } from "../../src/nodes/array";
-import { ConstantNode } from "../../src/nodes/constant";
-import { TernaryNode } from "../../src/nodes/ternary";
+import { ArrayNode } from "../../src/nodes/types/array";
+import { ConstantNode } from "../../src/nodes/variables/constant";
+import { TernaryNode } from "../../src/nodes/logic/ternary";
 
 describe("Array", () => {
     it("should return an array node which has 0 elements", () => {

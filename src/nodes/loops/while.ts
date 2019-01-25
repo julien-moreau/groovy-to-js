@@ -1,4 +1,4 @@
-import { Node, ENodeType } from "./node";
+import { Node, ENodeType } from "../node";
 
 const template = 
 `while ({{condition}}) {

@@ -3,11 +3,11 @@ import * as assert from "assert";
 import { Analyser } from "../../src/analyser/analyser";
 import { ETokenType } from "../../src/tokenizer/tokenizer";
 
-import { BinaryOperatorNode } from "../../src/nodes/binaryOperator";
-import { VariableDeclarationNode } from "../../src/nodes/variableDeclaration";
-import { ConstantNode } from "../../src/nodes/constant";
-import { TernaryNode } from "../../src/nodes/ternary";
-import { VariableNode } from "../../src/nodes/variable";
+import { BinaryOperatorNode } from "../../src/nodes/operators/binaryOperator";
+import { VariableDeclarationNode } from "../../src/nodes/variables/variableDeclaration";
+import { ConstantNode } from "../../src/nodes/variables/constant";
+import { TernaryNode } from "../../src/nodes/logic/ternary";
+import { VariableNode } from "../../src/nodes/variables/variable";
 import { ErrorNode } from "../../src/nodes/error";
 import { EndOfInstructionNode } from "../../src/nodes/endOfInstruction";
 
