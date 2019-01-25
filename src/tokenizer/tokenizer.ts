@@ -194,7 +194,6 @@ export class Tokenizer {
                         case "+": this._type = ETokenType.Plus; break;
                         case "*": this._type = ETokenType.Mult; break;
                         case "/": this._type = ETokenType.Div; break;
-                        case "!": this._type = ETokenType.Not; break;
                         default: return this._type = ETokenType.Error;
                     }
 

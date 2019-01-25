@@ -8,6 +8,8 @@ import { VariableDeclarationNode } from "../../src/nodes/variableDeclaration";
 import { ConstantNode } from "../../src/nodes/constant";
 import { TernaryNode } from "../../src/nodes/ternary";
 import { VariableNode } from "../../src/nodes/variable";
+import { ErrorNode } from "../../src/nodes/error";
+import { EndOfInstructionNode } from "../../src/nodes/endOfInstruction";
 
 describe("Analyser", () => {
     it("should expose current root node", () => {
@@ -105,6 +107,17 @@ describe("Analyser", () => {
         assert(a.ifFalse instanceof ConstantNode && a.ifFalse.value === 3);
     });
 
+    it("should parse ternary with semicolon", () => {
+        const a = new Analyser("1 ? 2 : 3;").analyse() as EndOfInstructionNode;
+        assert(a instanceof EndOfInstructionNode);
+
+        const e = a.left as TernaryNode;
+        assert(e instanceof TernaryNode);
+        assert(e.condition instanceof ConstantNode && e.condition.value === 1);
+        assert(e.ifTrue instanceof ConstantNode && e.ifTrue.value === 2);
+        assert(e.ifFalse instanceof ConstantNode && e.ifFalse.value === 3);
+    });
+
     it("should parse ternary even parenthetized", () => {
         const a = new Analyser("(1 ? 2 : 3)").analyse() as TernaryNode;
         assert(a instanceof TernaryNode);
@@ -121,8 +134,28 @@ describe("Analyser", () => {
         assert(a.ifFalse instanceof ConstantNode && a.ifFalse.value === 3);
     });
 
-    it("should parse a self minus operation", () => {
+    it("should parse a post self minus operation", () => {
         const a = new Analyser("a--").analyse() as VariableNode;
         assert(a instanceof VariableNode && a.postOperator === ETokenType.SelfMinus);
+    });
+
+    it("should parse a post self plus operation", () => {
+        const a = new Analyser("a++").analyse() as VariableNode;
+        assert(a instanceof VariableNode && a.postOperator === ETokenType.SelfPlus);
+    });
+
+    it("should parse a pre self minus operation", () => {
+        const a = new Analyser("--a").analyse() as VariableNode;
+        assert(a instanceof VariableNode && a.preOperator === ETokenType.SelfMinus);
+    });
+
+    it("should parse a pre self plus operation", () => {
+        const a = new Analyser("++a").analyse() as VariableNode;
+        assert(a instanceof VariableNode && a.preOperator === ETokenType.SelfPlus);
+    });
+
+    it("should return error node for broken ternary", () => {
+        const a = new Analyser("1 ? 3").analyse() as ErrorNode;
+        assert(a instanceof ErrorNode);
     });
 });

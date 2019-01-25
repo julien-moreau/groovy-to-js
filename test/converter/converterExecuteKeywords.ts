@@ -139,4 +139,15 @@ describe("Executed converter", () => {
             return a;
         `, 0));
     });
+
+    it("should use a do loop", () => {
+        assert(execute(`
+            def a = 0;
+            do {
+                a++;
+            } while (a < 3)
+
+            return a;
+        `, 3));
+    });
 });

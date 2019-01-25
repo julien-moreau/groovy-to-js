@@ -15,8 +15,12 @@ describe("Converter", () => {
         assert(convert("!!1") === "!(!(1))".replace(/n/g, ""));
     });
 
-    it("should convert terms", () => {
+    it("should convert terms with mult", () => {
         assert(convert("1 * 2") === "(1 * 2)".replace(/n/g, ""));
+    });
+
+    it("should convert terms with div", () => {
+        assert(convert("1 / 2") === "(1 / 2)".replace(/n/g, ""));
     });
 
     it("should convert an assignation", () => {

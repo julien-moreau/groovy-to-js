@@ -1,9 +1,8 @@
 import { Node, ENodeType } from "./node";
 
 const template = 
-`for ({{init}} {{condition}} {{step}}) {
-    {{right}}
-}`;
+`for ({{init}} {{condition}} {{step}})
+    {{right}}`;
 
 export class ForNode extends Node {
     /**

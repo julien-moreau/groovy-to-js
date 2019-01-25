@@ -16,6 +16,7 @@ export enum ENodeType {
     While = 102,
     For = 103,
     Break = 104,
+    Do = 105,
 
     Block = 200,
 

@@ -20,6 +20,7 @@ import { WhileNode } from "../nodes/while";
 import { AssignNode } from "../nodes/assign";
 import { ForNode } from "../nodes/for";
 import { BreakNode } from "../nodes/break";
+import { DoNode } from "../nodes/do";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
@@ -267,14 +268,23 @@ export class Analyser {
                 if (!tokenizer.match(ETokenType.OpenPar)) return new ErrorNode("Expected an opening parenthesis");
 
                 const forInitalization = (!tokenizer.match(ETokenType.SemiColon)) ? this.getSuperExpression(tokenizer) : null;
-                const condition = (!tokenizer.match(ETokenType.SemiColon)) ? this.getSuperExpression(tokenizer) : null;
-                const step = (!tokenizer.match(ETokenType.ClosePar)) ? this.getSuperExpression(tokenizer) : null;
+                const forCondition = (!tokenizer.match(ETokenType.SemiColon)) ? this.getSuperExpression(tokenizer) : null;
+                const forStep = (!tokenizer.match(ETokenType.ClosePar)) ? this.getSuperExpression(tokenizer) : null;
                 
-                if (step && !tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
+                if (forStep && !tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
 
-                const block = (tokenizer.match(ETokenType.OpenBrace)) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer);
+                const forBlock = (tokenizer.match(ETokenType.OpenBrace)) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer);
                 
-                return new ForNode(block, forInitalization, condition, step);
+                return new ForNode(forBlock, forInitalization, forCondition, forStep);
+            // Do
+            case "do":
+                if (!tokenizer.match(ETokenType.OpenBrace)) return new ErrorNode("Expected an opening brace");
+                const doBlock = this.getBlock(tokenizer);
+
+                if (tokenizer.currentString !== "while" || !tokenizer.match(ETokenType.Identifier)) return new ErrorNode("Expected a while statement");
+                const doCondition = this.getSuperExpression(tokenizer);
+
+                return new DoNode(doBlock, doCondition);
             // Break
             case "break":
                 return new BreakNode();

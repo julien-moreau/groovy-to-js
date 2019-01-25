@@ -9,5 +9,6 @@ export const keywords: string[] = [
     "return",
     "break",
     "while",
-    "for"
+    "for",
+    "do"
 ];
