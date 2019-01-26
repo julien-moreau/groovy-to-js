@@ -102,7 +102,7 @@ export class Analyser {
         const ifTrue = this.getExpression(tokenizer);
         if (!tokenizer.match(ETokenType.Colon))
             return new ErrorNode("Expected ':'.");
-        
+
         const ifFalse = this.getExpression(tokenizer);
         const ternary = new TernaryNode(e, ifTrue, ifFalse);
         return tokenizer.match(ETokenType.SemiColon) ? new EndOfInstructionNode(ternary) : ternary;
@@ -114,7 +114,7 @@ export class Analyser {
      */
     public getExpression(tokenizer: Tokenizer): Node {
         let left = this.getTerm(tokenizer);
-        while(!tokenizer.isEnd && !(left instanceof ErrorNode)) {
+        while (!tokenizer.isEnd && !(left instanceof ErrorNode)) {
             const operator = tokenizer.currentToken;
 
             // "+"" or "-"" or "+="" or "-="" or "*=" or "/=""
@@ -165,7 +165,7 @@ export class Analyser {
         while (!(left instanceof ErrorNode)) {
             // "*" or "/" or "<=>"
             const operator = tokenizer.currentToken;
-            if(tokenizer.match(ETokenType.Mult) || tokenizer.match(ETokenType.Div) || tokenizer.match(ETokenType.SpaceShip)) {
+            if (tokenizer.match(ETokenType.Mult) || tokenizer.match(ETokenType.Div) || tokenizer.match(ETokenType.SpaceShip)) {
                 left = new BinaryOperatorNode(operator, left, this.getFactor(tokenizer));
                 continue;
             }
@@ -243,7 +243,7 @@ export class Analyser {
                 // "++"" or "--""
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
                     return new VariableNode(variableOrTypeOrKeyword, null, postOperator, this.currentScope.getVariableType(variableOrTypeOrKeyword));
-                
+
                 return new VariableNode(variableOrTypeOrKeyword, null, null, this.currentScope.getVariableType(variableOrTypeOrKeyword));
             }
 
@@ -252,6 +252,13 @@ export class Analyser {
 
             if (!tokenizer.match(ETokenType.Equal)) { // No direct assign
                 if (tokenizer.match(ETokenType.OpenPar)) {
+                    if (tokenizer.match(ETokenType.ClosePar)) {
+                        if (tokenizer.match(ETokenType.OpenBrace))
+                            return new FunctionDeclarationNode(variableName, [], this.getBlock(tokenizer)); // fn() { ... }
+
+                        // TODO: Method call
+                    }
+
                     // Function definition
                     const fnArguments = this.getList(tokenizer);
                     if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
@@ -259,11 +266,24 @@ export class Analyser {
                     const fnBlock = this.getBlock(tokenizer);
 
                     return new FunctionDeclarationNode(variableName, fnArguments.nodes, fnBlock);
-                } else {
-                    // Just a variable with no value
-                    variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, null);
                 }
-            } else {
+
+                // Just a variable with no value
+                variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, null);
+            } else { // Direct assign
+                if (tokenizer.match(ETokenType.OpenBrace)) {
+                    // Function definition
+                    if (tokenizer.match(ETokenType.Pointer)) return new FunctionDeclarationNode(variableName, [], this.getBlock(tokenizer)); // { -> ... }
+                    if (tokenizer.match(ETokenType.CloseBrace)) return new FunctionDeclarationNode(variableName, [], new BlockNode([])); // { }
+
+                    // { x, y, ... -> ... }
+                    const fnArguments = this.getList(tokenizer);
+                    if (!tokenizer.match(ETokenType.Pointer)) return new ErrorNode("Expected a pointer");
+                    const fnBlock = this.getBlock(tokenizer);
+                    return new FunctionDeclarationNode(variableName, fnArguments.nodes, fnBlock);
+                }
+
+                // Just a variable with a value
                 variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, this.getSuperExpression(tokenizer));
             }
 
@@ -418,7 +438,7 @@ export class Analyser {
             // Break
             case "break":
                 return new BreakNode();
-            
+
             // Not supported
             default:
                 return new ErrorNode(`Keyword "${keyword}" not supported`);
