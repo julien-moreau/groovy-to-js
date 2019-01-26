@@ -1,4 +1,5 @@
 import { VariableDeclarationNode } from "../nodes/variables/variableDeclaration";
+import { ConstantNode } from "../nodes/variables/constant";
 
 export class Scope {
     public variables: VariableDeclarationNode[] = [];
@@ -27,8 +28,15 @@ export class Scope {
      */
     public getVariableType(name: string): string {
         const v = this.getVariable(name);
-        if (v) return v.type;
+        if (!v) return "any";
 
-        return "any";
+        if (v.value instanceof ConstantNode && v.value.value !== undefined) {
+            const type = typeof(v.value.value);
+
+            if (type !== "object" && type !== "function")
+                return typeof(v.value.value);
+        }
+
+        return v.type;
     }
 }

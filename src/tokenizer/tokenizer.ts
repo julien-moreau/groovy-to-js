@@ -17,6 +17,8 @@ export enum ETokenType {
     SelfPlus = IsBinaryOperator + 7,
     BitwiseLeft = IsBinaryOperator + 8,
     BitwiseRight = IsBinaryOperator + 9,
+    SelfPlusAssign = IsBinaryOperator + 10,
+    SelfMinusAssign = IsBinaryOperator + 11,
 
     And = IsLogicOperator + 0,
     Or = IsLogicOperator + 1,
@@ -212,24 +214,36 @@ export class Tokenizer {
                 // Operator
                 else if (Tokenizer.IsOperatorPattern.test(c)) {
                     switch (c) {
-                        case "-": this._type = ETokenType.Minus; break;
-                        case "+": this._type = ETokenType.Plus; break;
-                        case "*": this._type = ETokenType.Mult; break;
-                        case "/": this._type = ETokenType.Div; break;
-                        default: return this._type = ETokenType.Error;
+                        case "-": (this._type = ETokenType.Minus); break;
+                        case "+": (this._type = ETokenType.Plus); break;
+                        case "*": (this._type = ETokenType.Mult); break;
+                        case "/": (this._type = ETokenType.Div); break;
+                        default: return (this._type = ETokenType.Error);
                     }
 
                     this._buffer = c;
 
-                    // --, ++, etc.
+                    // --, ++
                     if (c === (c = this.peek())) {
                         this._buffer += c;
                         this.forward();
 
                         switch (c) {
-                            case "-": this._type = ETokenType.SelfMinus; break;
-                            case "+": this._type = ETokenType.SelfPlus; break;
+                            case "-": (this._type = ETokenType.SelfMinus); break;
+                            case "+": (this._type = ETokenType.SelfPlus); break;
                             default: return this._type = ETokenType.Error;
+                        }
+                    }
+
+                    // =
+                    if (c === "=") {
+                        this._buffer += c;
+                        this.forward();
+
+                        switch (this._buffer) {
+                            case "+=": return (this._type = ETokenType.SelfPlusAssign);
+                            case "-=": return(this._type = ETokenType.SelfMinusAssign);
+                            default: return (this._type = ETokenType.Error);
                         }
                     }
                 }

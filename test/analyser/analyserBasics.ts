@@ -155,6 +155,12 @@ describe("Analyser", () => {
         assert(a instanceof VariableNode && a.preOperator === ETokenType.SelfPlus);
     });
 
+    it("should parse a += asignment", () => {
+        const a = new Analyser("a += a").analyse() as BinaryOperatorNode;
+        assert(a instanceof BinaryOperatorNode);
+        assert(a.operatorMethodString === "add");
+    });
+
     it("should return error node for broken ternary", () => {
         const a = new Analyser("1 ? 3").analyse() as ErrorNode;
         assert(a instanceof ErrorNode);

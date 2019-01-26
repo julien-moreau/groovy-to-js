@@ -106,7 +106,10 @@ export class Analyser {
             const operator = tokenizer.currentToken;
 
             // + or -
-            if (tokenizer.match(ETokenType.Plus) || tokenizer.match(ETokenType.Minus)) {
+            if (
+                tokenizer.match(ETokenType.Plus) || tokenizer.match(ETokenType.Minus) ||
+                tokenizer.match(ETokenType.SelfPlusAssign) || tokenizer.match(ETokenType.SelfMinusAssign)
+            ) {
                 left = new BinaryOperatorNode(operator, left, this.getTerm(tokenizer));
                 continue;
             }

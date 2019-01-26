@@ -27,6 +27,8 @@ export class BinaryOperatorNode extends Node {
             case ETokenType.Div: return "/";
             case ETokenType.BitwiseLeft: return "<<";
             case ETokenType.BitwiseRight: return ">>";
+            case ETokenType.SelfPlusAssign: return "+=";
+            case ETokenType.SelfMinusAssign: return "-=";
             default: throw new Error("Invalid Operator.");
         }
     }
@@ -36,8 +38,12 @@ export class BinaryOperatorNode extends Node {
      */
     public get operatorMethodString(): string {
         switch (this.operator) {
-            case ETokenType.Minus: return "subtract";
-            case ETokenType.Plus: return "add";
+            case ETokenType.Minus:
+            case ETokenType.SelfMinusAssign:
+                return "subtract";
+            case ETokenType.Plus:
+            case ETokenType.SelfPlusAssign:
+                return "add";
             case ETokenType.Mult: return "multiply";
             case ETokenType.SpaceShip: return "spaceship";
             case ETokenType.BitwiseLeft: return "bitwiseLeft";

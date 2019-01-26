@@ -28,11 +28,14 @@ describe("Ultimate", () => {
             def a = 0;
             def b = [];
             def c = "1";
+            def d = 0;
+
+            String str = "helloworld";
 
             for (def i = 0; i < 1024; i++) {
                 b << i;
                 a++;
-                c = c + i;
+                c += (d++) + (++d);
 
                 if (i == 512) {
                     break;
