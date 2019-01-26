@@ -3,6 +3,7 @@ import * as assert from "assert";
 import { Analyser } from "../../src/analyser/analyser";
 import { FunctionDeclarationNode } from "../../src/nodes/function/functionDeclaration";
 import { FunctionCallNode } from "../../src/nodes/function/functionCall";
+import { VariableNode } from "../../src/nodes/variables/variable";
 
 describe("Function", () => {
     it("should return a function declaration node", () => {
@@ -49,19 +50,19 @@ describe("Function", () => {
 
     it("should return a function call node which has 0 arguments", () => {
         const a = new Analyser("fn()").analyse() as FunctionCallNode;
-        assert(a instanceof FunctionCallNode && a.name === "fn" && a.args.length === 0);
+        assert(a instanceof FunctionCallNode && (a.variable as VariableNode).name === "fn" && a.args.length === 0);
     });
 
     it("should return a function call node which has elements arguments", () => {
         const a = new Analyser("fn(a, 1)").analyse() as FunctionCallNode;
-        assert(a instanceof FunctionCallNode && a.name === "fn" && a.args.length === 2);
+        assert(a instanceof FunctionCallNode && (a.variable as VariableNode).name === "fn" && a.args.length === 2);
     });
 
     it("should return a function call node which has a function call as argument", () => {
         const a = new Analyser("fn1(fn2())").analyse() as FunctionCallNode;
-        assert(a instanceof FunctionCallNode && a.name === "fn1" && a.args.length === 1);
+        assert(a instanceof FunctionCallNode && (a.variable as VariableNode).name === "fn1" && a.args.length === 1);
 
         const arg1 = a.args[0] as FunctionCallNode;
-        assert(arg1 instanceof FunctionCallNode && arg1.name === "fn2");
+        assert(arg1 instanceof FunctionCallNode && (arg1.variable as VariableNode).name === "fn2");
     });
 });

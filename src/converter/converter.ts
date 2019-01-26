@@ -6,8 +6,12 @@ import { ENodeType } from "../nodes/node";
 /**
  * Converts the given groovy code to JavaScript code
  * @param groovyCode the groovy code to convert
+ * @param context the context where to the code will run
  */
-export function convert(groovyCode: string): string {
+export function convert(groovyCode: string, context?: any): string {
+    // TODO: context
+
+    // Analyser
     const a = new Analyser(groovyCode);
     const result: string[] = [];
 

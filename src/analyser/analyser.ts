@@ -241,20 +241,22 @@ export class Analyser {
 
             const postOperator = tokenizer.currentToken;
             if (!tokenizer.match(ETokenType.Identifier)) {
+                const variableType = this.currentScope.getVariableType(variableOrTypeOrKeyword);
+
                 // "++"" or "--""
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
-                    return new VariableNode(variableOrTypeOrKeyword, null, postOperator, this.currentScope.getVariableType(variableOrTypeOrKeyword));
+                    return new VariableNode(variableOrTypeOrKeyword, null, postOperator, variableType);
 
                 // Method call
                 if (tokenizer.match(ETokenType.OpenPar)) {
-                    if (tokenizer.match(ETokenType.ClosePar)) return new FunctionCallNode(variableOrTypeOrKeyword, []);
+                    if (tokenizer.match(ETokenType.ClosePar)) return new FunctionCallNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), []);
 
                     const callArguments = this.getList(tokenizer);
                     if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
-                    return new FunctionCallNode(variableName, callArguments.nodes);
+                    return new FunctionCallNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), callArguments.nodes);
                 }
 
-                return new VariableNode(variableOrTypeOrKeyword, null, null, this.currentScope.getVariableType(variableOrTypeOrKeyword));
+                return new VariableNode(variableOrTypeOrKeyword, null, null, variableType);
             }
 
             // Definition
