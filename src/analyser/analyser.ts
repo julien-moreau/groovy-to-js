@@ -23,6 +23,7 @@ import { ForNode } from "../nodes/loops/for";
 import { BreakNode } from "../nodes/keywords/break";
 import { DoNode } from "../nodes/loops/do";
 import { LogicNode } from "../nodes/operators/logicOperator";
+import { MapNode, MapElementNode } from "../nodes/types/map";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
@@ -239,13 +240,20 @@ export class Analyser {
             return variableDeclaration;
         }
 
-        // Array
+        // Array or map
         if (tokenizer.match(ETokenType.OpenBracket)) {
+            // Empty array
             if (tokenizer.match(ETokenType.CloseBracket)) return new ArrayNode([]);
 
-            const l = this.getList(tokenizer);
-            if (!tokenizer.match(ETokenType.CloseBracket)) return new ErrorNode("Expected a closing backet");
-            return new ArrayNode(l);
+            // Empty map
+            if (tokenizer.match(ETokenType.Colon)) {
+                if (!tokenizer.match(ETokenType.CloseBracket)) return new ErrorNode("Expected a closing bracket");
+                return new MapNode([]);
+            }
+
+            const l = this.getArrayOrMapList(tokenizer);
+            if (!tokenizer.match(ETokenType.CloseBracket)) return new ErrorNode("Expected a closing bracket");
+            return (l.isArray) ? new ArrayNode(l.nodes) : new MapNode(l.nodes as MapElementNode[]);
         }
 
         // Super expression
@@ -261,16 +269,47 @@ export class Analyser {
      * @param tokenizer the tokenizer reference
      * @example "1, 2,3, 'coucou', []" etc.
      */
-    public getList(tokenizer: Tokenizer): Node[] {
-        const list: Node[] = [this.getSuperExpression(tokenizer)];
+    public getArrayOrMapList(tokenizer: Tokenizer): { isArray: boolean; nodes: Node[] } {
+        const first = this.getSuperExpression(tokenizer);
 
-        while (tokenizer.match(ETokenType.Comma)) {
-            const e = this.getSuperExpression(tokenizer);
-            if (e instanceof ErrorNode) return [e];
-            list.push(e);
+        if (!tokenizer.match(ETokenType.Colon)) {
+            // Just an array
+            const array: Node[] = [first];
+
+            while (tokenizer.match(ETokenType.Comma)) {
+                const e = this.getSuperExpression(tokenizer);
+                if (e instanceof ErrorNode) return { isArray: true, nodes: [e] };
+                array.push(e);
+            }
+
+            return { isArray: true, nodes: array };
         }
 
-        return list;
+        // Map
+        const map: Node[] = [];
+
+        // Get first map element
+        const value = this.getSuperExpression(tokenizer);
+        map.push(new MapElementNode(first, value));
+
+        while (tokenizer.match(ETokenType.Comma)) {
+            // Left
+            const left = this.getSuperExpression(tokenizer);
+            if (left instanceof ErrorNode) return { isArray: false, nodes: [left] };
+
+            // :
+            if (!tokenizer.match(ETokenType.Colon))
+                return { isArray: false, nodes: [new ErrorNode("Expected a colon")] };
+
+            // Right
+            const right = this.getSuperExpression(tokenizer);
+            if (right instanceof ErrorNode) return { isArray: false, nodes: [right] };
+
+            map.push(new MapElementNode(left, right));
+        }
+
+        if (map.length > 0)
+            return { isArray: false, nodes: map };
     }
 
     /**

@@ -29,6 +29,12 @@ describe("Ultimate", () => {
             def b = [];
             def c = "1";
             def d = 0;
+            def emptyMap = [:];
+            def map = [
+                a: 0,
+                b: 1,
+                c: d == 0 ? 2 : 1
+            ];
 
             String str = "helloworld";
 

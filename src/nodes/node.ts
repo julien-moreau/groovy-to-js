@@ -10,6 +10,8 @@ export enum ENodeType {
     Comparison = 7,
     Assign = 8,
     LogicOperator = 9,
+    Map = 10,
+    MapElement = 11,
 
     // Keywords
     Return = 100,
