@@ -24,6 +24,7 @@ import { BreakNode } from "../nodes/keywords/break";
 import { DoNode } from "../nodes/loops/do";
 import { LogicNode } from "../nodes/operators/logicOperator";
 import { MapNode, MapElementNode } from "../nodes/types/map";
+import { FunctionDeclarationNode } from "../nodes/types/functionDeclaration";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
@@ -61,8 +62,18 @@ export class Analyser {
         return this._tokenizer.isEnd;
     }
 
+    /**
+     * Retuns the current scope of the analyser
+     */
     public get currentScope(): Scope {
         return this._scopes[this._scopes.length - 1];
+    }
+
+    /**
+     * Returns the current position of the tokenizer
+     */
+    public get currentPos(): number {
+        return this._tokenizer.pos;
     }
 
     /**
@@ -227,21 +238,31 @@ export class Analyser {
                 variableOrTypeOrKeyword += `.${member}`;
             }
 
-            const currentToken = tokenizer.currentToken;
-
+            const postOperator = tokenizer.currentToken;
             if (!tokenizer.match(ETokenType.Identifier)) {
                 // "++"" or "--""
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
-                    return new VariableNode(variableOrTypeOrKeyword, null, currentToken, this.currentScope.getVariableType(variableOrTypeOrKeyword));
+                    return new VariableNode(variableOrTypeOrKeyword, null, postOperator, this.currentScope.getVariableType(variableOrTypeOrKeyword));
                 
                 return new VariableNode(variableOrTypeOrKeyword, null, null, this.currentScope.getVariableType(variableOrTypeOrKeyword));
             }
 
             // Definition
-            let variableDeclaration: VariableDeclarationNode = null;
+            let variableDeclaration: VariableDeclarationNode | FunctionDeclarationNode = null;
 
-            if (!tokenizer.match(ETokenType.Equal)) {
-                variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, null);
+            if (!tokenizer.match(ETokenType.Equal)) { // No direct assign
+                if (tokenizer.match(ETokenType.OpenPar)) {
+                    // Function definition
+                    const fnArguments = this.getList(tokenizer);
+                    if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
+                    if (!tokenizer.match(ETokenType.OpenBrace)) return new ErrorNode("Expected an opening brace");
+                    const fnBlock = this.getBlock(tokenizer);
+
+                    return new FunctionDeclarationNode(variableName, fnArguments.nodes, fnBlock);
+                } else {
+                    // Just a variable with no value
+                    variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, null);
+                }
             } else {
                 variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, this.getSuperExpression(tokenizer));
             }
@@ -261,7 +282,7 @@ export class Analyser {
                 return new MapNode([]);
             }
 
-            const l = this.getArrayOrMapList(tokenizer);
+            const l = this.getList(tokenizer);
             if (!tokenizer.match(ETokenType.CloseBracket)) return new ErrorNode("Expected a closing bracket");
             return (l.isArray) ? new ArrayNode(l.nodes) : new MapNode(l.nodes as MapElementNode[]);
         }
@@ -279,7 +300,7 @@ export class Analyser {
      * @param tokenizer the tokenizer reference
      * @example "1, 2,3, 'coucou', []" etc.
      */
-    public getArrayOrMapList(tokenizer: Tokenizer): { isArray: boolean; nodes: Node[] } {
+    public getList(tokenizer: Tokenizer): { isArray: boolean; nodes: Node[] } {
         const first = this.getSuperExpression(tokenizer);
 
         if (!tokenizer.match(ETokenType.Colon)) {

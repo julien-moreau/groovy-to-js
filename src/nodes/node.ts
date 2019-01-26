@@ -12,6 +12,7 @@ export enum ENodeType {
     LogicOperator = 9,
     Map = 10,
     MapElement = 11,
+    FunctionDeclaration = 12,
 
     // Keywords
     Return = 100,

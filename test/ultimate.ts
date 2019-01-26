@@ -38,12 +38,17 @@ describe("Ultimate", () => {
 
             String str = "helloworld";
 
+            def fn(arg) {
+                
+            }
+
             for (def i = 0; i < 1024; i++) {
                 b << i;
                 a++;
                 c += (d++) + (++d);
                 c *= d;
                 d /= d;
+                d -= 0;
                 map.a += 1;
 
                 if (i == 512) {

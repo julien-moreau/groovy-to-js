@@ -43,6 +43,7 @@ export enum ETokenType {
     Superior = 9,
     SuperiorOrEqual = 10,
     Dot = 11,
+    Pointer = 12,
 
     EndOfInput = 1 << 30,
     Error = 1 << 31
@@ -251,6 +252,14 @@ export class Tokenizer {
                             case "/=": return (this._type = ETokenType.SelfDivAssign);
                             default: return (this._type = ETokenType.Error);
                         }
+                    }
+                    
+                    // >
+                    if (c === ">") {
+                        this._buffer += c;
+                        this.forward();
+
+                        return (this._type = ETokenType.Pointer);
                     }
                 }
                 // Inferior

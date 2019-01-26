@@ -6,7 +6,7 @@ import { ConstantNode } from "../../src/nodes/variables/constant";
 import { VariableNode } from "../../src/nodes/variables/variable";
 import { TernaryNode } from "../../src/nodes/logic/ternary";
 
-describe("Array", () => {
+describe("Map", () => {
     it("should return a map node which has 0 elements", () => {
         const a = new Analyser("[:]").analyse();
         assert(a instanceof MapNode && a.elements.length === 0);

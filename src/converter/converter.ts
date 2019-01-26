@@ -15,7 +15,7 @@ export function convert(groovyCode: string): string {
         // Super expresion
         const n = a.analyse();
         if (n.nodeType === ENodeType.Error)
-            throw new Error(n.toString());
+            throw new Error(`Error at pos: ${a.currentPos}: ${n.toString()}`);
 
         result.push(n.toString());
 

@@ -73,4 +73,10 @@ describe("Tokenizer", () => {
         assert.equal(t.currentToken, ETokenType.BitwiseRight);
         assert.equal(t.currentString, ">>");
     });
+
+    it("should return a pointer", () => {
+        const t = new Tokenizer("->");
+        assert.equal(t.currentToken, ETokenType.Pointer);
+        assert.equal(t.currentString, "->");
+    });
 });
