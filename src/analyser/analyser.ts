@@ -97,7 +97,7 @@ export class Analyser {
     }
 
     /**
-     * Returns a node expression
+     * Returns a node expression which is defined by a at least a term
      * @param tokenizer the tokenizer reference
      */
     public getExpression(tokenizer: Tokenizer): Node {
@@ -105,10 +105,11 @@ export class Analyser {
         while(!tokenizer.isEnd && !(left instanceof ErrorNode)) {
             const operator = tokenizer.currentToken;
 
-            // + or -
+            // "+"" or "-"" or "+="" or "-="" or "*=" or "/=""
             if (
                 tokenizer.match(ETokenType.Plus) || tokenizer.match(ETokenType.Minus) ||
-                tokenizer.match(ETokenType.SelfPlusAssign) || tokenizer.match(ETokenType.SelfMinusAssign)
+                tokenizer.match(ETokenType.SelfPlusAssign) || tokenizer.match(ETokenType.SelfMinusAssign) ||
+                tokenizer.match(ETokenType.SelfMultAssign) || tokenizer.match(ETokenType.SelfDivAssign)
             ) {
                 left = new BinaryOperatorNode(operator, left, this.getTerm(tokenizer));
                 continue;
@@ -143,9 +144,9 @@ export class Analyser {
     }
 
     /**
-     * Returns the node which defines a term (operator priority)
+     * Returns the node which defines a term (variable, loop, etc.)
      * @param tokenizer the tokenizer reference
-     * @example "&&" or "*" or "/" or "<=>"
+     * @example "a" or "for (...) { ... }" or "&&" or "*" or "/" or "<=>" etc.
      */
     public getTerm(tokenizer: Tokenizer): Node {
         let left = this.getFactor(tokenizer);
@@ -170,7 +171,7 @@ export class Analyser {
     }
 
     /**
-     * Returns a node which defined by a factor or not
+     * Returns a node which is defined by a factor or not
      * @param tokenizer the tokenizer reference
      * @example factor: "2", "-2", "-variable", "variable", "(...)", "-(...)"
      */
@@ -193,7 +194,7 @@ export class Analyser {
     }
 
     /**
-     * Returns the node which has no unary expression
+     * Returns the node which has no factor (positive factor)
      * @param tokenizer the tokenizer reference
      * @example positive factor: "2", "variable", "(...)"
      */

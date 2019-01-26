@@ -19,6 +19,8 @@ export enum ETokenType {
     BitwiseRight = IsBinaryOperator + 9,
     SelfPlusAssign = IsBinaryOperator + 10,
     SelfMinusAssign = IsBinaryOperator + 11,
+    SelfMultAssign = IsBinaryOperator + 12,
+    SelfDivAssign = IsBinaryOperator + 13,
 
     And = IsLogicOperator + 0,
     Or = IsLogicOperator + 1,
@@ -242,7 +244,9 @@ export class Tokenizer {
 
                         switch (this._buffer) {
                             case "+=": return (this._type = ETokenType.SelfPlusAssign);
-                            case "-=": return(this._type = ETokenType.SelfMinusAssign);
+                            case "-=": return (this._type = ETokenType.SelfMinusAssign);
+                            case "*=": return (this._type = ETokenType.SelfMultAssign);
+                            case "/=": return (this._type = ETokenType.SelfDivAssign);
                             default: return (this._type = ETokenType.Error);
                         }
                     }

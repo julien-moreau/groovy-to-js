@@ -36,6 +36,8 @@ describe("Ultimate", () => {
                 b << i;
                 a++;
                 c += (d++) + (++d);
+                c *= d;
+                d /= d;
 
                 if (i == 512) {
                     break;

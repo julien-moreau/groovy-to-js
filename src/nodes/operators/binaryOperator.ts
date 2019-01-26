@@ -29,6 +29,8 @@ export class BinaryOperatorNode extends Node {
             case ETokenType.BitwiseRight: return ">>";
             case ETokenType.SelfPlusAssign: return "+=";
             case ETokenType.SelfMinusAssign: return "-=";
+            case ETokenType.SelfMultAssign: return "*=";
+            case ETokenType.SelfDivAssign: return "/=";
             default: throw new Error("Invalid Operator.");
         }
     }
@@ -44,7 +46,9 @@ export class BinaryOperatorNode extends Node {
             case ETokenType.Plus:
             case ETokenType.SelfPlusAssign:
                 return "add";
-            case ETokenType.Mult: return "multiply";
+            case ETokenType.Mult:
+            case ETokenType.SelfMultAssign:
+                return "multiply";
             case ETokenType.SpaceShip: return "spaceship";
             case ETokenType.BitwiseLeft: return "bitwiseLeft";
             default: return this.operatorString;
@@ -55,6 +59,10 @@ export class BinaryOperatorNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
+        // Divide
+        if (this.operator === ETokenType.Div || this.operator === ETokenType.SelfDivAssign)
+            return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+
         // Simple?
         if (this.operator !== ETokenType.SpaceShip && this.left instanceof ConstantNode && this.right instanceof ConstantNode)
             return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
