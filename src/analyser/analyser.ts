@@ -24,7 +24,8 @@ import { BreakNode } from "../nodes/keywords/break";
 import { DoNode } from "../nodes/loops/do";
 import { LogicNode } from "../nodes/operators/logicOperator";
 import { MapNode, MapElementNode } from "../nodes/types/map";
-import { FunctionDeclarationNode } from "../nodes/types/functionDeclaration";
+import { FunctionDeclarationNode } from "../nodes/function/functionDeclaration";
+import { FunctionCallNode } from "../nodes/function/functionCall";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
@@ -244,6 +245,15 @@ export class Analyser {
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
                     return new VariableNode(variableOrTypeOrKeyword, null, postOperator, this.currentScope.getVariableType(variableOrTypeOrKeyword));
 
+                // Method call
+                if (tokenizer.match(ETokenType.OpenPar)) {
+                    if (tokenizer.match(ETokenType.ClosePar)) return new FunctionCallNode(variableOrTypeOrKeyword, []);
+
+                    const callArguments = this.getList(tokenizer);
+                    if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
+                    return new FunctionCallNode(variableName, callArguments.nodes);
+                }
+
                 return new VariableNode(variableOrTypeOrKeyword, null, null, this.currentScope.getVariableType(variableOrTypeOrKeyword));
             }
 
@@ -252,20 +262,18 @@ export class Analyser {
 
             if (!tokenizer.match(ETokenType.Equal)) { // No direct assign
                 if (tokenizer.match(ETokenType.OpenPar)) {
-                    if (tokenizer.match(ETokenType.ClosePar)) {
-                        if (tokenizer.match(ETokenType.OpenBrace))
-                            return new FunctionDeclarationNode(variableName, [], this.getBlock(tokenizer)); // fn() { ... }
-
-                        // TODO: Method call
-                    }
+                    if (tokenizer.match(ETokenType.ClosePar) && tokenizer.match(ETokenType.OpenBrace))
+                        return new FunctionDeclarationNode(variableName, [], this.getBlock(tokenizer)); // fn() { ... }
 
                     // Function definition
                     const fnArguments = this.getList(tokenizer);
-                    if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
-                    if (!tokenizer.match(ETokenType.OpenBrace)) return new ErrorNode("Expected an opening brace");
-                    const fnBlock = this.getBlock(tokenizer);
+                    fnArguments.nodes.forEach(f => f instanceof VariableDeclarationNode && (f.noVar = true));
 
-                    return new FunctionDeclarationNode(variableName, fnArguments.nodes, fnBlock);
+                    if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
+                    if (!tokenizer.match(ETokenType.OpenBrace)) return new ErrorNode("Expected a closing brace");
+
+                    // Method body
+                    return new FunctionDeclarationNode(variableName, fnArguments.nodes, this.getBlock(tokenizer));
                 }
 
                 // Just a variable with no value
@@ -278,6 +286,8 @@ export class Analyser {
 
                     // { x, y, ... -> ... }
                     const fnArguments = this.getList(tokenizer);
+                    fnArguments.nodes.forEach(f => f instanceof VariableDeclarationNode && (f.noVar = true));
+                    
                     if (!tokenizer.match(ETokenType.Pointer)) return new ErrorNode("Expected a pointer");
                     const fnBlock = this.getBlock(tokenizer);
                     return new FunctionDeclarationNode(variableName, fnArguments.nodes, fnBlock);

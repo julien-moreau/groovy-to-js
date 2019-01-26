@@ -165,7 +165,7 @@ export class Tokenizer {
                 if (c === "_" || Tokenizer.IsLetterPattern.test(c)) {
                     this._type = ETokenType.Identifier;
                     this._buffer = c;
-                    while (!this.isEnd && (Tokenizer.IsLetterPattern.test((c = this.peek())) || c === "_")) {
+                    while (!this.isEnd && (Tokenizer.IsLetterPattern.test((c = this.peek())) || c === "_" || Tokenizer.IsNumberPattern.test(c))) {
                         this._buffer += c;
                         this.forward();
                     }

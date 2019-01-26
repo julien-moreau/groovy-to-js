@@ -18,6 +18,12 @@ describe("Tokenizer", () => {
         assert.equal(t.currentString, "def");
     });
 
+    it("should return an identifier which has digits", () => {
+        const t = new Tokenizer("def1");
+        assert.equal(t.currentToken, ETokenType.Identifier);
+        assert.equal(t.currentString, "def1");
+    });
+
     it("should return a number", () => {
         const t = new Tokenizer("1");
         assert.equal(t.currentToken, ETokenType.Number);
