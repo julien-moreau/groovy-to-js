@@ -42,6 +42,7 @@ export enum ETokenType {
     InferiorOrEqual = 8,
     Superior = 9,
     SuperiorOrEqual = 10,
+    Dot = 11,
 
     EndOfInput = 1 << 30,
     Error = 1 << 31
@@ -155,6 +156,7 @@ export class Tokenizer {
             case ":": return (this._type = ETokenType.Colon);
             case ";": return (this._type = ETokenType.SemiColon);
             case ",": return (this._type = ETokenType.Comma);
+            case ".": return (this._type = ETokenType.Dot);
 
             default:
                 //4- Non terminals

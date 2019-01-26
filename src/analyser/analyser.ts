@@ -211,14 +211,24 @@ export class Analyser {
             return new ConstantNode(identifier);
 
         // Identifier
-        const variableOrTypeOrKeyword = tokenizer.currentString;
+        let variableOrTypeOrKeyword = tokenizer.currentString;
         if (tokenizer.match(ETokenType.Identifier)) {
             // Keyword?
             if (keywords.indexOf(variableOrTypeOrKeyword) !== -1) return this.getKeyword(variableOrTypeOrKeyword, tokenizer);
 
             // Variable
             const variableName = tokenizer.currentString;
+
+            // . accessor?
+            while (tokenizer.match(ETokenType.Dot)) {
+                const member = tokenizer.currentString;
+                if (!tokenizer.match(ETokenType.Identifier)) return new ErrorNode("Expected an identifier");
+
+                variableOrTypeOrKeyword += `.${member}`;
+            }
+
             const currentToken = tokenizer.currentToken;
+
             if (!tokenizer.match(ETokenType.Identifier)) {
                 // "++"" or "--""
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))

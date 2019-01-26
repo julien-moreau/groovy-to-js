@@ -44,6 +44,7 @@ describe("Ultimate", () => {
                 c += (d++) + (++d);
                 c *= d;
                 d /= d;
+                map.a += 1;
 
                 if (i == 512) {
                     break;

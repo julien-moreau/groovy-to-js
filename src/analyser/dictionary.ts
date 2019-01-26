@@ -1,6 +1,21 @@
 export const naviveTypes: string[] = [
     "def",
-    "String"
+    "byte",
+    "String",
+    "short",
+    "Short",
+    "int",
+    "Integer",
+    "long",
+    "Long",
+    "float",
+    "Float",
+    "double",
+    "Double",
+    "char",
+    "Character",
+    "boolean",
+    "Boolean"
 ];
 
 export const keywords: string[] = [

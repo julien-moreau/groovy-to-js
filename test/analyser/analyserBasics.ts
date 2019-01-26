@@ -176,4 +176,9 @@ describe("Analyser", () => {
         assert(b.left instanceof VariableNode && b.left.name === "b");
         assert(b.right instanceof VariableNode && b.right.name === "c");
     });
+
+    it("should return a variable name which comes from an object", () => {
+        const a = new Analyser("a.b").analyse() as VariableNode;
+        assert(a instanceof VariableNode && a.name === "a.b");
+    });
 });
