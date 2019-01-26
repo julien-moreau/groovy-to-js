@@ -5,7 +5,7 @@ export class EndOfInstructionNode extends Node {
      * Constructor
      * @param type the node type
      */
-    constructor(public left: Node) {
+    constructor(public left: Node = null) {
         super(ENodeType.EndOfInstruction);
     }
 
@@ -13,6 +13,6 @@ export class EndOfInstructionNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        return `${this.left.toString()};`;
+        return `${this.left ? this.left.toString() : ""};`;
     }
 }

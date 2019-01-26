@@ -12,11 +12,17 @@ export function convert(groovyCode: string): string {
     const result: string[] = [];
 
     while (!a.isEnd) {
+        // Super expresion
         const n = a.analyse();
         if (n.nodeType === ENodeType.Error)
             throw new Error(n.toString());
 
         result.push(n.toString());
+
+        // ;
+        const e = a.isEndOfInstruction();
+        if (e)
+            result.push(e.toString());
     }
 
     return beautifier.js_beautify(result.join("\n"));

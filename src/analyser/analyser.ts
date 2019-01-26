@@ -65,15 +65,20 @@ export class Analyser {
     }
 
     /**
+     * Returns if the current 
+     */
+    public isEndOfInstruction(): Node {
+        if (this._tokenizer.match(ETokenType.SemiColon))
+            return new EndOfInstructionNode();
+    }
+
+    /**
      * Returns the top level expression
      * @param tokenizer the tokenizer reference
      */
     public getSuperExpression(tokenizer: Tokenizer): Node {
         // Expression
         const e = this.getExpression(tokenizer);
-
-        // Semicolon
-        if (tokenizer.match(ETokenType.SemiColon)) return new EndOfInstructionNode(e);
 
         // Assignement
         if (tokenizer.match(ETokenType.Equal)) return new AssignNode(e, this.getSuperExpression(tokenizer));
@@ -106,10 +111,11 @@ export class Analyser {
                 continue;
             }
 
-            // <, <=, > or >=
+            // <, <=, >, >= or ==
             if (
                 tokenizer.match(ETokenType.Inferior) || tokenizer.match(ETokenType.Superior) ||
-                tokenizer.match(ETokenType.InferiorOrEqual) || tokenizer.match(ETokenType.SuperiorOrEqual)
+                tokenizer.match(ETokenType.InferiorOrEqual) || tokenizer.match(ETokenType.SuperiorOrEqual) ||
+                tokenizer.match(ETokenType.Equality)
             ) {
                 left = new ComparisonNode(operator, left, this.getSuperExpression(tokenizer));
                 continue;
@@ -134,8 +140,9 @@ export class Analyser {
     }
 
     /**
-     * Returns the node which defines a term
+     * Returns the node which defines a term (operator priority)
      * @param tokenizer the tokenizer reference
+     * @example "&&" or "*" or "/" or "<=>"
      */
     public getTerm(tokenizer: Tokenizer): Node {
         let left = this.getFactor(tokenizer);
@@ -208,6 +215,7 @@ export class Analyser {
             const variableName = tokenizer.currentString;
             const currentToken = tokenizer.currentToken;
             if (!tokenizer.match(ETokenType.Identifier)) {
+                // "++"" or "--""
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
                     return new VariableNode(variableOrTypeOrKeyword, null, currentToken, this.currentScope.getVariableType(variableOrTypeOrKeyword));
                 
@@ -274,11 +282,15 @@ export class Analyser {
             // If
             case "if":
                 const ifCondition = this.getSuperExpression(tokenizer);
-                const ifTrue = (tokenizer.match(ETokenType.OpenBrace)) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer);
+                let ifTrue = (tokenizer.match(ETokenType.OpenBrace)) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer);
+
+                // ;
+                if (tokenizer.match(ETokenType.SemiColon))
+                    ifTrue = new EndOfInstructionNode(ifTrue);
 
                 // Else?
                 const firstKeyword = tokenizer.currentString;
-                if (tokenizer.getNextToken() && firstKeyword === "else") {
+                if (firstKeyword === "else" && tokenizer.match(ETokenType.Identifier)) {
                     const secondKeyword = tokenizer.currentString;
 
                     if (tokenizer.match(ETokenType.OpenBrace)) {
@@ -305,9 +317,11 @@ export class Analyser {
 
                 const forInitalization = (!tokenizer.match(ETokenType.SemiColon)) ? this.getSuperExpression(tokenizer) : null;
                 if (forInitalization instanceof ErrorNode) return forInitalization;
+                if (forInitalization && !tokenizer.match(ETokenType.SemiColon)) return new ErrorNode("Expected a semicolon");
 
                 const forCondition = (!tokenizer.match(ETokenType.SemiColon)) ? this.getSuperExpression(tokenizer) : null;
                 if (forCondition instanceof ErrorNode) return forCondition;
+                if (forCondition && !tokenizer.match(ETokenType.SemiColon)) return new ErrorNode("Expected a semicolon");
 
                 const forStep = (!tokenizer.match(ETokenType.ClosePar)) ? this.getSuperExpression(tokenizer) : null;
                 if (forStep instanceof ErrorNode) return forStep;
@@ -349,7 +363,14 @@ export class Analyser {
         // Get block's nodes
         const nodes: Node[] = [];
         while (!tokenizer.match(ETokenType.CloseBrace)) {
-            nodes.push(this.getSuperExpression(tokenizer));
+            const e = this.getSuperExpression(tokenizer);
+            if (e instanceof ErrorNode) return e;
+            nodes.push(e);
+
+            // ;
+            const end = this.isEndOfInstruction();
+            if (end)
+                nodes.push(end);
         }
 
         // Remove scope

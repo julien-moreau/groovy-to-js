@@ -2,7 +2,7 @@ import * as assert from "assert";
 import * as vm from 'vm';
 
 import { convert } from "../src/converter/converter";
-import { add, subtract, multiply } from "../src/augmentations/operators";
+import { add, subtract, multiply, bitwiseLeft } from "../src/augmentations/operators";
 
 const template = `
 (function() {
@@ -14,23 +14,25 @@ const execute = (str: string, expected: any) => {
     const result = template.replace("{{code}}", convert(str));
 
     const context = vm.createContext();
-    Object.assign(context, { add, subtract, multiply });
+    Object.assign(context, { add, subtract, multiply, bitwiseLeft });
 
     const script = new vm.Script(result);
     const actual = script.runInContext(context) as any[];
 
-    return actual === expected;
+    assert(actual === expected);
 };
 
 describe("Ultimate", () => {
-    it.skip("should parse the given code", () => {
+    it("should parse the given code", () => {
         execute(`
             def a = 0;
             def b = [];
+            def c = "1";
 
             for (def i = 0; i < 1024; i++) {
                 b << i;
                 a++;
+                c = c + i;
 
                 if (i == 512) {
                     break;
@@ -38,6 +40,6 @@ describe("Ultimate", () => {
             }
 
             return a;
-        `, 0);
+        `, 513);
     });
 });

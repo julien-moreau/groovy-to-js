@@ -1,7 +1,7 @@
 import { Node, ENodeType } from "../node";
 
 const template = 
-`for ({{init}} {{condition}} {{step}})
+`for ({{init}}; {{condition}}; {{step}})
     {{right}}`;
 
 export class ForNode extends Node {
@@ -26,8 +26,8 @@ export class ForNode extends Node {
      */
     public toString(): string {
         return template
-            .replace("{{init}}", this.init ? this.init.toString() : ";")
-            .replace("{{condition}}", this.condition ? this.condition.toString() : ";")
+            .replace("{{init}}", this.init ? this.init.toString() : "")
+            .replace("{{condition}}", this.condition ? this.condition.toString() : "")
             .replace("{{step}}", this.step ? this.step.toString() : "")
             .replace("{{right}}", this.right.toString());
     }

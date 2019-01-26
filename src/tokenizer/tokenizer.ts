@@ -51,7 +51,6 @@ export class Tokenizer {
     public static ExcludedCharacters: string[] = [" ", "\n", "\r", "\t"];
     public static IsLetterPattern: RegExp = /^[a-zA-Z]+$/;
     public static IsNumberPattern: RegExp = /^[0-9]+$/;
-    public static IsStringPattern: RegExp = /^["']+$/;
     public static IsOperatorPattern: RegExp = /^[+-/*]+$/;
     public static IsLogicOperatorPattern: RegExp = /^[&|]+$/;
 
@@ -184,15 +183,16 @@ export class Tokenizer {
                     }
                 }
                 // String
-                else if (Tokenizer.IsStringPattern.test(c)) {
+                else if (c === '"' || c === "'") {
                     this._type = ETokenType.String;
                     this._buffer = c;
-                    while (!this.isEnd && !Tokenizer.IsStringPattern.test(c = this.peek())) {
+                    while (!this.isEnd && (c = this.peek()) !== '"' && c !== "'") {
                         this._buffer += c;
                         this.forward();
                     }
 
                     this._buffer += c;
+                    this.forward();
                 }
                 // Logic operator
                 else if (Tokenizer.IsLogicOperatorPattern.test(c)) {
