@@ -11,6 +11,7 @@ import { VariableNode } from "../../src/nodes/variables/variable";
 import { ErrorNode } from "../../src/nodes/error";
 import { EndOfInstructionNode } from "../../src/nodes/endOfInstruction";
 import { LogicNode } from "../../src/nodes/operators/logicOperator";
+import { CastOperatorNode } from "../../src/nodes/operators/castOperator";
 
 describe("Analyser", () => {
     it("should expose current root node", () => {
@@ -92,11 +93,11 @@ describe("Analyser", () => {
         assert(a.value === null);
     });
 
-    it("should return a variable declaration with has a value", () => {
+    it("should return a variable declaration with has a value whith the associated type", () => {
         const a = new Analyser(`def a = "helloworld"`).analyse() as VariableDeclarationNode;
         assert(a instanceof VariableDeclarationNode);
         assert(a.name === "a");
-        assert(a.type === "def");
+        assert(a.type === "string");
         assert(a.value instanceof ConstantNode && a.value.value === `"helloworld"`);
     });
 
@@ -180,5 +181,10 @@ describe("Analyser", () => {
     it("should return a variable name which comes from an object", () => {
         const a = new Analyser("a.b").analyse() as VariableNode;
         assert(a instanceof VariableNode && a.name === "a.b");
+    });
+
+    it("should return cast operator node", () => {
+        const a = new Analyser("(int)a").analyse() as CastOperatorNode;
+        assert(a instanceof CastOperatorNode && a.type === "int");
     });
 });

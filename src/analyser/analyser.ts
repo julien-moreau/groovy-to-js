@@ -26,6 +26,7 @@ import { LogicNode } from "../nodes/operators/logicOperator";
 import { MapNode, MapElementNode } from "../nodes/types/map";
 import { FunctionDeclarationNode } from "../nodes/function/functionDeclaration";
 import { FunctionCallNode } from "../nodes/function/functionCall";
+import { CastOperatorNode } from "../nodes/operators/castOperator";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
@@ -242,15 +243,33 @@ export class Analyser {
 
             const postOperator = tokenizer.currentToken;
             if (!tokenizer.match(ETokenType.Identifier)) {
-                const variableType = this.currentScope.getVariableType(variableOrTypeOrKeyword);
+                // In case of x.y
+                const members = variableOrTypeOrKeyword.split(".");
+                const variableType = members.length === 1
+                                     ? this.currentScope.getVariableType(variableOrTypeOrKeyword)
+                                     : this.currentScope.getVariableType(members.slice(0, members.length - 1).join("."));
 
                 // "++"" or "--""
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
                     return new VariableNode(variableOrTypeOrKeyword, null, postOperator, variableType);
 
                 // Method call
+                if (tokenizer.match(ETokenType.OpenBrace)) {
+                    const f = this.getFunction(tokenizer);
+                    return new FunctionCallNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), [new FunctionDeclarationNode(null, f.arguments, f.block)]);
+                }
+
                 if (tokenizer.match(ETokenType.OpenPar)) {
-                    if (tokenizer.match(ETokenType.ClosePar)) return new FunctionCallNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), []);
+                    if (tokenizer.match(ETokenType.ClosePar)) {
+                        // () { }
+                        if (tokenizer.match(ETokenType.OpenBrace)) {
+                            const f = this.getFunction(tokenizer);
+                            return new FunctionCallNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), [new FunctionDeclarationNode(null, f.arguments, f.block)]);
+                        }
+
+                        // ();
+                        return new FunctionCallNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), []);
+                    }
 
                     const callArguments = this.getList(tokenizer);
                     if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected a closing parenthesis");
@@ -293,7 +312,8 @@ export class Analyser {
                 }
 
                 // Just a variable with a value
-                variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, this.getSuperExpression(tokenizer));
+                const value = this.getSuperExpression(tokenizer);
+                variableDeclaration = new VariableDeclarationNode(VariableDeclarationNode.GetTypeFromNode(value), variableName, value);
             }
 
             this.currentScope.variables.push(variableDeclaration);
@@ -327,6 +347,10 @@ export class Analyser {
         const e = this.getSuperExpression(tokenizer);
         if (e instanceof ErrorNode) return e;
         if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected closing parenthesis.");
+
+        // Type casting
+        if (e instanceof VariableNode && !this.currentScope.getVariable(e.name)) return new CastOperatorNode(e.name, this.getSuperExpression(tokenizer));
+
         return e;
     }
 

@@ -1,6 +1,7 @@
 import { Node, ENodeType } from "../node";
 import { ETokenType } from "../../tokenizer/tokenizer";
 import { ConstantNode } from "../variables/constant";
+import { VariableNode } from "../variables/variable";
 
 const unsupportedTypes: string[] = [
     "any",
@@ -63,9 +64,15 @@ export class BinaryOperatorNode extends Node {
         if (this.operator === ETokenType.Div || this.operator === ETokenType.SelfDivAssign)
             return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
 
-        // Simple?
-        if (this.operator !== ETokenType.SpaceShip && this.left instanceof ConstantNode && this.right instanceof ConstantNode)
-            return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+        if (this.operator !== ETokenType.SpaceShip) {
+            // Constants?
+            if (this.left instanceof ConstantNode && this.right instanceof ConstantNode)
+                return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+
+            // Variables?
+            if (this.left instanceof VariableNode && this.left.type !== "array")
+                return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+        }
 
         return `${this.operatorMethodString}(${this.left.toString()}, ${this.right.toString()})`;
     }

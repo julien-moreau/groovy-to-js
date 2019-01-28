@@ -14,6 +14,7 @@ export enum ENodeType {
     MapElement = 11,
     FunctionDeclaration = 12,
     FunctionCall = 13,
+    CastOperator = 14,
 
     // Keywords
     Return = 100,
