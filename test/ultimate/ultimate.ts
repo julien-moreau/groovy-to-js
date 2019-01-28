@@ -38,6 +38,11 @@ describe("Ultimate", () => {
 
             String str = "helloworld";
 
+            b.each({
+                a++;
+                a--;
+            });
+
             def fn1(arg) {
                 a += arg;
                 a -= arg;

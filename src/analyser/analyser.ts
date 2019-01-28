@@ -110,8 +110,9 @@ export class Analyser {
     }
 
     /**
-     * Returns a node expression which is defined by a at least a term
+     * Returns a node expression which is defined by a at least a positive factor
      * @param tokenizer the tokenizer reference
+     * @example "a++", "a", etc.
      */
     public getExpression(tokenizer: Tokenizer): Node {
         let left = this.getTerm(tokenizer);
@@ -282,17 +283,13 @@ export class Analyser {
                 variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, null);
             } else { // Direct assign
                 if (tokenizer.match(ETokenType.OpenBrace)) {
-                    // Function definition
+                    // Closure definition
                     if (tokenizer.match(ETokenType.Pointer)) return new FunctionDeclarationNode(variableName, [], this.getBlock(tokenizer)); // { -> ... }
                     if (tokenizer.match(ETokenType.CloseBrace)) return new FunctionDeclarationNode(variableName, [], new BlockNode([])); // { }
 
-                    // { x, y, ... -> ... }
-                    const fnArguments = this.getList(tokenizer);
-                    fnArguments.nodes.forEach(f => f instanceof VariableDeclarationNode && (f.noVar = true));
-                    
-                    if (!tokenizer.match(ETokenType.Pointer)) return new ErrorNode("Expected a pointer");
-                    const fnBlock = this.getBlock(tokenizer);
-                    return new FunctionDeclarationNode(variableName, fnArguments.nodes, fnBlock);
+                    // { ... } or { x, y, ... -> ... }
+                    const f = this.getFunction(tokenizer);
+                    return f.error || new FunctionDeclarationNode(variableName, f.arguments, f.block);
                 }
 
                 // Just a variable with a value
@@ -317,6 +314,12 @@ export class Analyser {
             const l = this.getList(tokenizer);
             if (!tokenizer.match(ETokenType.CloseBracket)) return new ErrorNode("Expected a closing bracket");
             return (l.isArray) ? new ArrayNode(l.nodes) : new MapNode(l.nodes as MapElementNode[]);
+        }
+
+        // Closure
+        if (tokenizer.match(ETokenType.OpenBrace)) {
+            const f = this.getFunction(tokenizer);
+            return new FunctionDeclarationNode(null, f.arguments, f.block);
         }
 
         // Super expression
@@ -475,13 +478,48 @@ export class Analyser {
 
             // ;
             const end = this.isEndOfInstruction();
-            if (end)
-                nodes.push(end);
+            if (end) nodes.push(end);
         }
 
         // Remove scope
         this._scopes.pop();
 
         return new BlockNode(nodes);
+    }
+
+    /**
+     * Returns an object containing the arguments and the block
+     * @param tokenizer the tokenizer reference
+     */
+    public getFunction(tokenizer: Tokenizer): { arguments?: Node[]; block?: Node; error?: Node } {
+        // Push a new scope
+        this._scopes.push(new Scope(this.currentScope));
+
+        // Get block by default
+        const args: Node[] = [];
+        const nodes: Node[] = [];
+        while (!tokenizer.match(ETokenType.CloseBrace)) {
+            const e = this.getSuperExpression(tokenizer);
+            if (e instanceof ErrorNode) return { error: e };
+
+            // , or ->
+            if (tokenizer.match(ETokenType.Comma) || tokenizer.match(ETokenType.Pointer)) {
+                args.push(e);
+                continue;
+            }
+
+            nodes.push(e);
+
+            // ;
+            const end = this.isEndOfInstruction();
+            if (end) nodes.push(end);
+        }
+
+       // Remove scope
+       this._scopes.pop();
+
+       // Return
+       args.forEach(a => a instanceof VariableDeclarationNode && (a.noVar = true));
+       return { arguments: args, block: new BlockNode(nodes) };
     }
 }

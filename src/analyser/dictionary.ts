@@ -18,12 +18,14 @@ export const keywords: string[] = [
 ];
 
 export const translation = {
-    arrayProperty: {
-        "size": "length"
-    },
-    arrayFn: {
-        "each": "forEach",
-        "eachWithIndex": "forEach",
-        "add": "push"
+    array: {
+        methodToproperty: {
+            "size": "length",
+        },
+        methods: {
+            "each": "forEach",
+            "eachWithIndex": "forEach",
+            "add": "push"
+        }
     }
 }

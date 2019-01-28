@@ -1,8 +1,12 @@
 import { Node, ENodeType } from "../node";
 
 const template =
+`function({{args}})
+{{block}}`;
+
+const templateFull =
 `var {{name}} = function({{args}})
-    {{block}}`;
+{{block}}`;
 
 export class FunctionDeclarationNode extends Node {
     /**
@@ -16,9 +20,10 @@ export class FunctionDeclarationNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        return template
+        const base = this.name ? templateFull : template;
+        return base
             .replace("{{name}}", this.name)
-            .replace("{{args}}", this.args.map(a => a.toString()).join(", "))
+            .replace("{{args}}", this.args.length === 0 ? "it" : this.args.map(a => a.toString()).join(", "))
             .replace("{{block}}", this.block.toString());
     }
 }
