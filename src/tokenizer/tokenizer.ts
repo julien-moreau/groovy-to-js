@@ -223,7 +223,6 @@ export class Tokenizer {
                         case "+": (this._type = ETokenType.Plus); break;
                         case "*": (this._type = ETokenType.Mult); break;
                         case "/": (this._type = ETokenType.Div); break;
-                        default: return (this._type = ETokenType.Error);
                     }
 
                     this._buffer = c;
@@ -236,7 +235,6 @@ export class Tokenizer {
                         switch (c) {
                             case "-": (this._type = ETokenType.SelfMinus); break;
                             case "+": (this._type = ETokenType.SelfPlus); break;
-                            default: return this._type = ETokenType.Error;
                         }
                     }
 
@@ -250,7 +248,6 @@ export class Tokenizer {
                             case "-=": return (this._type = ETokenType.SelfMinusAssign);
                             case "*=": return (this._type = ETokenType.SelfMultAssign);
                             case "/=": return (this._type = ETokenType.SelfDivAssign);
-                            default: return (this._type = ETokenType.Error);
                         }
                     }
                     

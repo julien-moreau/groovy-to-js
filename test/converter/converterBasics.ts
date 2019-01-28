@@ -2,6 +2,10 @@ import * as assert from "assert";
 import { convert } from "../../src/converter/converter";
 
 describe("Converter", () => {
+    it("should throw an error when having an error node", () => {
+        assert.throws(() => convert("()"));
+    });
+
     it("should convert self post operations", () => {
         assert(convert("a--") === "a--".replace(/n/g, ""));
         assert(convert("a++") === "a++".replace(/n/g, ""));

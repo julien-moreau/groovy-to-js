@@ -12,6 +12,7 @@ import { ErrorNode } from "../../src/nodes/error";
 import { EndOfInstructionNode } from "../../src/nodes/endOfInstruction";
 import { LogicNode } from "../../src/nodes/operators/logicOperator";
 import { CastOperatorNode } from "../../src/nodes/operators/castOperator";
+import { UnaryOperatorNode } from "../../src/nodes/operators/unaryOperator";
 
 describe("Analyser", () => {
     it("should expose current root node", () => {
@@ -186,5 +187,15 @@ describe("Analyser", () => {
     it("should return cast operator node", () => {
         const a = new Analyser("(int)a").analyse() as CastOperatorNode;
         assert(a instanceof CastOperatorNode && a.type === "int");
+    });
+
+    it("should return a unary operation", () => {
+        const a = new Analyser("-1").analyse() as UnaryOperatorNode;
+        assert(a instanceof UnaryOperatorNode && a.operator === ETokenType.Minus && a.right instanceof ConstantNode);
+    });
+
+    it("should return a unary operation", () => {
+        const a = new Analyser("+1").analyse() as UnaryOperatorNode;
+        assert(a instanceof UnaryOperatorNode && a.operator === ETokenType.Plus && a.right instanceof ConstantNode);
     });
 });

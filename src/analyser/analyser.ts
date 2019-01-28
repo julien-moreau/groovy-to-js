@@ -194,7 +194,7 @@ export class Analyser {
         const currentToken = tokenizer.currentToken;
 
         // Unary
-        if (tokenizer.match(ETokenType.Minus) || tokenizer.match(ETokenType.Not))
+        if (tokenizer.match(ETokenType.Minus) || tokenizer.match(ETokenType.Not) || tokenizer.match(ETokenType.Plus))
             return new UnaryOperatorNode(currentToken, this.getFactor(tokenizer));
 
         // pre "--"" or pre "++""
@@ -246,8 +246,8 @@ export class Analyser {
                 // In case of x.y
                 const members = variableOrTypeOrKeyword.split(".");
                 const variableType = members.length === 1
-                                     ? this.currentScope.getVariableType(variableOrTypeOrKeyword)
-                                     : this.currentScope.getVariableType(members.slice(0, members.length - 1).join("."));
+                    ? this.currentScope.getVariableType(variableOrTypeOrKeyword)
+                    : this.currentScope.getVariableType(members.slice(0, members.length - 1).join("."));
 
                 // "++"" or "--""
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
@@ -295,18 +295,15 @@ export class Analyser {
                     if (!tokenizer.match(ETokenType.OpenBrace)) return new ErrorNode("Expected a closing brace");
 
                     // Method body
-                    return new FunctionDeclarationNode(variableName, fnArguments.nodes, this.getBlock(tokenizer));
+                    const f = this.getFunction(tokenizer);
+                    return new FunctionDeclarationNode(variableName, fnArguments.nodes, f.block);
                 }
 
                 // Just a variable with no value
                 variableDeclaration = new VariableDeclarationNode(variableOrTypeOrKeyword, variableName, null);
             } else { // Direct assign
                 if (tokenizer.match(ETokenType.OpenBrace)) {
-                    // Closure definition
-                    if (tokenizer.match(ETokenType.Pointer)) return new FunctionDeclarationNode(variableName, [], this.getBlock(tokenizer)); // { -> ... }
-                    if (tokenizer.match(ETokenType.CloseBrace)) return new FunctionDeclarationNode(variableName, [], new BlockNode([])); // { }
-
-                    // { ... } or { x, y, ... -> ... }
+                    // Closure definition: { ... } or { x, y, ... -> ... } or { -> ... }
                     const f = this.getFunction(tokenizer);
                     return f.error || new FunctionDeclarationNode(variableName, f.arguments, f.block);
                 }
@@ -519,6 +516,9 @@ export class Analyser {
         // Push a new scope
         this._scopes.push(new Scope(this.currentScope));
 
+        // In case of { -> ... }, ignore pointer
+        tokenizer.match(ETokenType.Pointer);
+
         // Get block by default
         const args: Node[] = [];
         const nodes: Node[] = [];
@@ -539,11 +539,23 @@ export class Analyser {
             if (end) nodes.push(end);
         }
 
-       // Remove scope
-       this._scopes.pop();
+        // Remove scope
+        this._scopes.pop();
 
-       // Return
-       args.forEach(a => a instanceof VariableDeclarationNode && (a.noVar = true));
-       return { arguments: args, block: new BlockNode(nodes) };
+        // Remove "var" keyword from variable declarations
+        args.forEach(a => a instanceof VariableDeclarationNode && (a.noVar = true));
+
+        // Convert last instruction of function to a return node as groovy guesses the returned value
+        if (nodes.length > 0) {
+            const end = nodes.pop();
+            if (end instanceof EndOfInstructionNode) {
+                nodes.push(new ReturnNode(nodes.pop()));
+                nodes.push(end);
+            } else {
+                nodes.push(new ReturnNode(end));
+            }
+        }
+
+        return { arguments: args, block: new BlockNode(nodes) };
     }
 }

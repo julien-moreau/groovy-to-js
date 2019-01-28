@@ -28,7 +28,7 @@ describe("Ultimate", () => {
             def a = 0;
             def b = [];
             def c = "1";
-            def d = 0;
+            def d = +0;
             def e = (float)((int)a);
             def f = (String)a;
             def g = (a <=> d) + ((a - 1) <=> d) + ((a + 4) <=> d);
@@ -42,6 +42,7 @@ describe("Ultimate", () => {
             String str = "helloworld";
 
             contextArray.each({ a++; a--; });
+            contextArray.sort({ a, b -> a <=> b });
             b.each({  a++; a--; });
             b.each() { a++; a--; }
             b.eachWithIndex { value, index -> }

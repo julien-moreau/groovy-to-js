@@ -85,4 +85,14 @@ describe("Tokenizer", () => {
         assert.equal(t.currentToken, ETokenType.Pointer);
         assert.equal(t.currentString, "->");
     });
+
+    it("should return an error token when bad boolean operations", () => {
+        const t = new Tokenizer("&*");
+        assert.equal(t.currentToken, ETokenType.Error);
+    });
+
+    it("should return an error token when bad character", () => {
+        const t = new Tokenizer("¤");
+        assert.equal(t.currentToken, ETokenType.Error);
+    });
 });
