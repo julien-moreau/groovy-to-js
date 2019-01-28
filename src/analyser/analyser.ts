@@ -44,14 +44,14 @@ export class Analyser {
     }
 
     /**
-     * Analyses the code to return the root node
+     * Analyses the code to return the root node of the current super-expression
      */
     public analyse(): Node {
         return (this._root = this.getSuperExpression(this._tokenizer));
     }
 
     /**
-     * Returns the root node
+     * Returns the root node of the current super-expression
      */
     public get rootNode(): Node {
         return this._root;
@@ -79,7 +79,7 @@ export class Analyser {
     }
 
     /**
-     * Returns if the current 
+     * Returns if the current token is a semicolon (end of instruction)
      */
     public isEndOfInstruction(): Node {
         if (this._tokenizer.match(ETokenType.SemiColon))
@@ -87,17 +87,17 @@ export class Analyser {
     }
 
     /**
-     * Returns the top level expression
+     * Returns the top level expression (root node)
      * @param tokenizer the tokenizer reference
      */
     public getSuperExpression(tokenizer: Tokenizer): Node {
         // Expression
         const e = this.getExpression(tokenizer);
 
-        // Assignement
+        // Assignement: a = ...
         if (tokenizer.match(ETokenType.Equal)) return new AssignNode(e, this.getSuperExpression(tokenizer));
 
-        // Ternary
+        // Ternary: a ? ... : ...;
         if (!tokenizer.match(ETokenType.QuestionMark))
             return e;
 
@@ -113,7 +113,7 @@ export class Analyser {
     /**
      * Returns a node expression which is defined by a at least a positive factor
      * @param tokenizer the tokenizer reference
-     * @example "a++", "a", etc.
+     * @example "a++", "a", "fn()", def ... etc.
      */
     public getExpression(tokenizer: Tokenizer): Node {
         let left = this.getTerm(tokenizer);
@@ -188,7 +188,7 @@ export class Analyser {
     /**
      * Returns a node which is defined by a factor or not
      * @param tokenizer the tokenizer reference
-     * @example factor: "2", "-2", "-variable", "variable", "(...)", "-(...)"
+     * @example factor: "+2", "-2", "-variable", "+variable", "(...)", "-(...)"
      */
     public getFactor(tokenizer: Tokenizer): Node {
         const currentToken = tokenizer.currentToken;

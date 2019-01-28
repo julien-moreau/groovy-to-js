@@ -38,19 +38,21 @@ describe("Ultimate", () => {
                 b: 1,
                 c: d == 0 ? 2 : 1
             ];
+            map.containsKey("a");
+            b.size();
 
             String str = "helloworld";
 
             contextArray.each({ a++; a--; });
             contextArray.sort({ a, b -> a <=> b });
             b.each({  a++; a--; });
-            b.each() { a++; a--; }
-            b.eachWithIndex { value, index -> }
+            b.each() { a++; a--; };
+            b.eachWithIndex { value, index -> };
 
-            def fn1(arg) { a += arg; a -= arg; }
-            def fn2 = { arg -> a += arg;  a -= arg; }
-            def fn3 = { String a, int b -> a += b; a -= b; }
-            def fn4 = { -> a += 1; a -= 1; }
+            def fn1(arg) { a += arg; a -= arg; };
+            def fn2 = { arg -> a += arg;  a -= arg; };
+            def fn3 = { String a, int b -> a += b; a -= b; };
+            def fn4 = { -> a += 1; a -= 1; };
 
             for (def i = 0; i < 1024; i++) {
                 b << i;

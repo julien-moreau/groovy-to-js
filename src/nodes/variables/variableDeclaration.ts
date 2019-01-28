@@ -38,5 +38,7 @@ export class VariableDeclarationNode extends Node {
         if (node instanceof VariableNode) return node.type;
         if (node instanceof ArrayNode) return "array";
         if (node instanceof MapNode) return "map";
+
+        return "";
     }
 }

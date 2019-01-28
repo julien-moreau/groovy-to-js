@@ -27,5 +27,11 @@ export const translation = {
             "eachWithIndex": "forEach",
             "add": "push"
         }
+    },
+    map: {
+        methodToproperty: { },
+        methods: {
+            "containsKey": "hasOwnProperty"
+        }
     }
 }

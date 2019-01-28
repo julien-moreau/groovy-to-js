@@ -26,8 +26,17 @@ export class FunctionCallNode extends Node {
         if (members.length === 1) return base;
 
         const method = members[members.length - 1];
-        const effective = translation.array.methods[method] || method;
+        const effectiveDict = translation[this.variable.type];
+        if (!effectiveDict) return base;
+        
+        const effectiveMethod = effectiveDict.methods[method];
+        if (effectiveMethod)
+            return `${members.slice(0, members.length - 1).join(".") + "." + effectiveMethod}(${this.args.map(a => a.toString()).join(", ")})`;
 
-        return `${members.slice(0, members.length - 1).join(".") + "." + effective}(${this.args.map(a => a.toString()).join(", ")})`;
+        const effectiveProperty = effectiveDict.methodToproperty[method];
+        if (effectiveProperty)
+            return `${members.slice(0, members.length - 1).join(".") + "." + effectiveProperty}`;
+
+        return base;
     }
 }
