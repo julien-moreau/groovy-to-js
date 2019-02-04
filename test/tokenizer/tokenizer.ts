@@ -95,4 +95,23 @@ describe("Tokenizer", () => {
         const t = new Tokenizer("¤");
         assert.equal(t.currentToken, ETokenType.Error);
     });
+
+    it("should parse a comment", () => {
+        const t = new Tokenizer("// Helloworld");
+        assert.equal(t.currentToken, ETokenType.Comment);
+    });
+
+    it("should parse a multiline comment", () => {
+        const t = new Tokenizer("/* Helloworld */");
+        assert.equal(t.currentToken, ETokenType.MultilineComment);
+    });
+
+    it("should parse a multiline comment", () => {
+        const t = new Tokenizer(`
+        /**
+         * Helloworld
+         */
+        `);
+        assert.equal(t.currentToken, ETokenType.MultilineComment);
+    });
 });

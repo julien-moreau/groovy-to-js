@@ -26,6 +26,8 @@ export enum ENodeType {
 
     Block = 200,
 
+    Comment = 300,
+
     // Special
     EndOfInstruction = 1000,
     Error = 1001

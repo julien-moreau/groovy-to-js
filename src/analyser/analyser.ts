@@ -27,6 +27,7 @@ import { MapNode, MapElementNode } from "../nodes/types/map";
 import { FunctionDeclarationNode } from "../nodes/function/functionDeclaration";
 import { FunctionCallNode } from "../nodes/function/functionCall";
 import { CastOperatorNode } from "../nodes/operators/castOperator";
+import { CommentNode } from "../nodes/comment";
 
 export class Analyser {
     private _tokenizer: Tokenizer;
@@ -84,6 +85,8 @@ export class Analyser {
     public isEndOfInstruction(): Node {
         if (this._tokenizer.match(ETokenType.SemiColon))
             return new EndOfInstructionNode();
+
+        return null;
     }
 
     /**
@@ -91,6 +94,11 @@ export class Analyser {
      * @param tokenizer the tokenizer reference
      */
     public getSuperExpression(tokenizer: Tokenizer): Node {
+        // Comment
+        const comment = tokenizer.currentString;
+        const commentToken = tokenizer.currentToken;
+        if (tokenizer.match(ETokenType.Comment) || tokenizer.match(ETokenType.MultilineComment)) return new CommentNode(commentToken, comment);
+
         // Expression
         const e = this.getExpression(tokenizer);
 

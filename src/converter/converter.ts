@@ -2,7 +2,7 @@ import * as beautifier from 'js-beautify';
 
 import { Analyser } from "../analyser/analyser";
 
-import { ENodeType } from "../nodes/node";
+import { Node, ENodeType } from "../nodes/node";
 import { VariableDeclarationNode } from '../nodes/variables/variableDeclaration';
 import { Context } from './context';
 
@@ -31,8 +31,8 @@ export function convert(groovyCode: string, context: any = { }): string {
         result.push(n.toString());
 
         // ;
-        const e = a.isEndOfInstruction();
-        if (e)
+        let e: Node;
+        while ((e = a.isEndOfInstruction()))
             result.push(e.toString());
     }
 

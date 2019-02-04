@@ -25,6 +25,7 @@ const execute = (str: string, ctx: any, expected: any) => {
 describe("Ultimate", () => {
     it("should parse the given code", () => {
         execute(`
+            // Define all variables
             def a = 0;
             def b = [];
             def c = "1";
@@ -36,13 +37,17 @@ describe("Ultimate", () => {
             def map = [
                 a: 0,
                 b: 1,
-                c: d == 0 ? 2 : 1
+                c: d == 0 ? 2 : 1,
+                d: { arg1, arg2 -> }
             ];
             map.containsKey("a");
             b.size();
 
             String str = "helloworld";
 
+            /**
+             * Check some functions
+             */
             contextArray.each({ a++; a--; });
             contextArray.sort({ a, b -> a <=> b });
             b.each({  a++; a--; });

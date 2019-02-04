@@ -45,6 +45,9 @@ export enum ETokenType {
     Dot = 11,
     Pointer = 12,
 
+    Comment = 100,
+    MultilineComment = 101,
+
     EndOfInput = 1 << 30,
     Error = 1 << 31
 }
@@ -235,6 +238,13 @@ export class Tokenizer {
                         switch (c) {
                             case "-": (this._type = ETokenType.SelfMinus); break;
                             case "+": (this._type = ETokenType.SelfPlus); break;
+                            case "/":
+                                this._type = ETokenType.Comment;
+                                while (!this.isEnd && (c = this.peek()) !== "\n" && c !== "\r") {
+                                    this._buffer += c;
+                                    this.forward();
+                                }
+                                break;
                         }
                     }
 
@@ -257,6 +267,29 @@ export class Tokenizer {
                         this.forward();
 
                         return (this._type = ETokenType.Pointer);
+                    }
+
+                    // /*
+                    if (this._buffer === "/" && c === "*") {
+                        this._type = ETokenType.MultilineComment;
+                        this._buffer += c;
+                        this.forward();
+
+                        switch (this._buffer) {
+                            case "/*":
+                                while (!this.isEnd) {
+                                    this._buffer += (c = this.peek());
+                                    this.forward();
+
+                                    // Check end
+                                    if (c === "*" && (c = this.peek()) === "/") {
+                                        this._buffer += "/";
+                                        this.forward();
+                                        break;
+                                    }
+                                }
+                                break;
+                        }
                     }
                 }
                 // Inferior
