@@ -6,7 +6,13 @@ export class VariableNode extends Node {
      * Constructor
      * @param name: the variable's name
      */
-    constructor(public name: string, public preOperator: ETokenType = null, public postOperator: ETokenType = null, public type: string = "any") {
+    constructor(
+        public name: string,
+        public preOperator: ETokenType = null,
+        public postOperator: ETokenType = null,
+        public type: string = "any",
+        public comments: Node[] = []
+    ) {
         super(ENodeType.Variable);
     }
 
@@ -30,6 +36,6 @@ export class VariableNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        return `${this.preOperatorString}${this.name}${this.postOperatorString}`;
+        return `${this.commentsToString()}${this.preOperatorString}${this.name}${this.postOperatorString}`;
     }
 }

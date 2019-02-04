@@ -7,7 +7,7 @@ export class ConstantNode extends Node {
      * Constructor
      * @param data the unary operator data
      */
-    constructor(public readonly value: PrimitiveType | PrimitiveType[]) {
+    constructor(public readonly value: PrimitiveType, public comments: Node[]) {
         super(ENodeType.Constant);
     }
 
@@ -15,6 +15,6 @@ export class ConstantNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        return `${this.value.toString()}`;
+        return `${this.commentsToString()}${this.value.toString()}`;
     }
 }

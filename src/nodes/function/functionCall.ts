@@ -14,7 +14,7 @@ export class FunctionCallNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        const base = `${this.variable.toString()}(${this.args.map(a => a.toString()).join(", ")})`;
+        const base = `${this.commentsToString()}${this.variable.toString()}(${this.args.map(a => a.toString()).join(", ")})`;
 
         if (!(this.variable instanceof VariableNode)) return base;
         
@@ -31,11 +31,11 @@ export class FunctionCallNode extends Node {
         
         const effectiveMethod = effectiveDict.methods[method];
         if (effectiveMethod)
-            return `${members.slice(0, members.length - 1).join(".") + "." + effectiveMethod}(${this.args.map(a => a.toString()).join(", ")})`;
+            return `${this.commentsToString()}${members.slice(0, members.length - 1).join(".") + "." + effectiveMethod}(${this.args.map(a => a.toString()).join(", ")})`;
 
         const effectiveProperty = effectiveDict.methodToproperty[method];
         if (effectiveProperty)
-            return `${members.slice(0, members.length - 1).join(".") + "." + effectiveProperty}`;
+            return `${this.commentsToString()}${members.slice(0, members.length - 1).join(".") + "." + effectiveProperty}`;
 
         return base;
     }

@@ -29,6 +29,11 @@ import { FunctionCallNode } from "../nodes/function/functionCall";
 import { CastOperatorNode } from "../nodes/operators/castOperator";
 import { CommentNode } from "../nodes/comment";
 
+export interface IAnalyserOptions {
+    keepComments?: boolean;
+    context?: any;
+}
+
 export class Analyser {
     private _tokenizer: Tokenizer;
     private _scopes: Scope[];
@@ -39,8 +44,10 @@ export class Analyser {
      * Constructor
      * @param str the groovy string to parse
      */
-    constructor(str: string) {
+    constructor(str: string, options: IAnalyserOptions = { }) {
         this._tokenizer = new Tokenizer(str);
+        this._tokenizer.keepComments = options.keepComments || false;
+
         this._scopes = [new Scope()];
     }
 
@@ -90,17 +97,32 @@ export class Analyser {
     }
 
     /**
+     * Returns a array of comments available above the next node
+     * @param tokenizer the tokenizer reference
+     */
+    public getComments(tokenizer: Tokenizer): Node[] {
+        const result: Node[] = [];
+
+        let commentStr = this._tokenizer.currentString;
+        let commentToken = this._tokenizer.currentToken;
+
+        while (tokenizer.match(ETokenType.Comment) || tokenizer.match(ETokenType.MultilineComment)) {
+            result.push(new CommentNode(commentToken, commentStr));
+            commentStr = this._tokenizer.currentString;
+            commentToken = this._tokenizer.currentToken;
+        }
+
+        return result;
+    }
+
+    /**
      * Returns the top level expression (root node)
      * @param tokenizer the tokenizer reference
      */
     public getSuperExpression(tokenizer: Tokenizer): Node {
-        // Comment
-        const comment = tokenizer.currentString;
-        const commentToken = tokenizer.currentToken;
-        if (tokenizer.match(ETokenType.Comment) || tokenizer.match(ETokenType.MultilineComment)) return new CommentNode(commentToken, comment);
-
         // Expression
-        const e = this.getExpression(tokenizer);
+        const eComments = this.getComments(tokenizer);
+        const e = this.getExpression(tokenizer).setComments(eComments);
 
         // Assignement: a = ...
         if (tokenizer.match(ETokenType.Equal)) return new AssignNode(e, this.getSuperExpression(tokenizer));
@@ -125,7 +147,9 @@ export class Analyser {
      */
     public getExpression(tokenizer: Tokenizer): Node {
         let left = this.getTerm(tokenizer);
+
         while (!tokenizer.isEnd && !(left instanceof ErrorNode)) {
+            const comments = this.getComments(tokenizer);
             const operator = tokenizer.currentToken;
 
             // "+"" or "-"" or "+="" or "-="" or "*=" or "/=""
@@ -134,7 +158,7 @@ export class Analyser {
                 tokenizer.match(ETokenType.SelfPlusAssign) || tokenizer.match(ETokenType.SelfMinusAssign) ||
                 tokenizer.match(ETokenType.SelfMultAssign) || tokenizer.match(ETokenType.SelfDivAssign)
             ) {
-                left = new BinaryOperatorNode(operator, left, this.getTerm(tokenizer));
+                left = new BinaryOperatorNode(operator, left, this.getTerm(tokenizer), comments);
                 continue;
             }
 
@@ -144,19 +168,19 @@ export class Analyser {
                 tokenizer.match(ETokenType.InferiorOrEqual) || tokenizer.match(ETokenType.SuperiorOrEqual) ||
                 tokenizer.match(ETokenType.Equality)
             ) {
-                left = new ComparisonNode(operator, left, this.getSuperExpression(tokenizer));
+                left = new ComparisonNode(operator, left, this.getSuperExpression(tokenizer), comments);
                 continue;
             }
 
             // "||"
             if (tokenizer.match(ETokenType.Or)) {
-                left = new LogicNode(operator, left, this.getSuperExpression(tokenizer));
+                left = new LogicNode(operator, left, this.getSuperExpression(tokenizer), comments);
                 continue;
             }
 
             // "<<" or ">>"
             if (tokenizer.match(ETokenType.BitwiseLeft) || tokenizer.match(ETokenType.BitwiseRight)) {
-                left = new BinaryOperatorNode(operator, left, this.getSuperExpression(tokenizer));
+                left = new BinaryOperatorNode(operator, left, this.getSuperExpression(tokenizer), comments);
                 continue;
             }
 
@@ -173,17 +197,20 @@ export class Analyser {
      */
     public getTerm(tokenizer: Tokenizer): Node {
         let left = this.getFactor(tokenizer);
+
         while (!(left instanceof ErrorNode)) {
-            // "*" or "/" or "<=>"
+            const comments = this.getComments(tokenizer);
             const operator = tokenizer.currentToken;
+
+            // "*" or "/" or "<=>"
             if (tokenizer.match(ETokenType.Mult) || tokenizer.match(ETokenType.Div) || tokenizer.match(ETokenType.SpaceShip)) {
-                left = new BinaryOperatorNode(operator, left, this.getFactor(tokenizer));
+                left = new BinaryOperatorNode(operator, left, this.getFactor(tokenizer), comments);
                 continue;
             }
 
             // "&&"
             if (tokenizer.match(ETokenType.And)) {
-                left = new LogicNode(operator, left, this.getSuperExpression(tokenizer));
+                left = new LogicNode(operator, left, this.getSuperExpression(tokenizer), comments);
                 continue;
             }
 
@@ -199,21 +226,22 @@ export class Analyser {
      * @example factor: "+2", "-2", "-variable", "+variable", "(...)", "-(...)"
      */
     public getFactor(tokenizer: Tokenizer): Node {
+        const comments = this.getComments(tokenizer);
         const currentToken = tokenizer.currentToken;
 
         // Unary
         if (tokenizer.match(ETokenType.Minus) || tokenizer.match(ETokenType.Not) || tokenizer.match(ETokenType.Plus))
-            return new UnaryOperatorNode(currentToken, this.getFactor(tokenizer));
+            return new UnaryOperatorNode(currentToken, this.getFactor(tokenizer), comments);
 
         // pre "--"" or pre "++""
         if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus)) {
             const variableName = tokenizer.currentString;
             if (!tokenizer.match(ETokenType.Identifier)) return new ErrorNode("Expected an identifier");
 
-            return new VariableNode(variableName, currentToken, null, this.currentScope.getVariableType(variableName));
+            return new VariableNode(variableName, currentToken, null, this.currentScope.getVariableType(variableName), comments);
         }
 
-        return this.getPositiveFactor(tokenizer);
+        return this.getPositiveFactor(tokenizer).setComments(comments);
     }
 
     /**
@@ -222,21 +250,25 @@ export class Analyser {
      * @example positive factor: "2", "variable", "(...)"
      */
     public getPositiveFactor(tokenizer: Tokenizer): Node {
+        // Comments
+        const comments = this.getComments(tokenizer);
+
         // Number
         const number = tokenizer.currentString;
         if (tokenizer.match(ETokenType.Number))
-            return new ConstantNode(parseInt(number));
+            return new ConstantNode(parseInt(number), comments);
 
         // String
         const identifier = tokenizer.currentString;
         if (tokenizer.match(ETokenType.String))
-            return new ConstantNode(identifier);
+            return new ConstantNode(identifier, comments);
 
         // Identifier
         let variableOrTypeOrKeyword = tokenizer.currentString;
         if (tokenizer.match(ETokenType.Identifier)) {
             // Keyword?
-            if (keywords.indexOf(variableOrTypeOrKeyword) !== -1) return this.getKeyword(variableOrTypeOrKeyword, tokenizer);
+            if (keywords.indexOf(variableOrTypeOrKeyword) !== -1)
+                return this.getKeyword(variableOrTypeOrKeyword, tokenizer).setComments(comments);
 
             // Variable
             const variableName = tokenizer.currentString;
@@ -259,7 +291,7 @@ export class Analyser {
 
                 // "++"" or "--""
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
-                    return new VariableNode(variableOrTypeOrKeyword, null, postOperator, variableType);
+                    return new VariableNode(variableOrTypeOrKeyword, null, postOperator, variableType, comments);
 
                 // Method call
                 if (tokenizer.match(ETokenType.OpenBrace)) {

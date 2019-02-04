@@ -6,7 +6,12 @@ export class ComparisonNode extends Node {
      * Constructor
      * @param data the binary operator data
      */
-    constructor(public comparison: ETokenType, public left: Node, public right: Node) {
+    constructor(
+        public comparison: ETokenType,
+        public left: Node,
+        public right: Node,
+        public comments: Node[] = []
+    ) {
         super(ENodeType.Comparison);
     }
 
@@ -28,6 +33,6 @@ export class ComparisonNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        return `${this.left.toString()} ${this.comparisonString} ${this.right.toString()}`;
+        return `${this.commentsToString()}${this.left.toString()} ${this.comparisonString} ${this.right.toString()}`;
     }
 }

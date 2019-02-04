@@ -6,7 +6,12 @@ export class LogicNode extends Node {
      * Constructor
      * @param data the binary operator data
      */
-    constructor(public operator: ETokenType, public left: Node, public right: Node) {
+    constructor(
+        public operator: ETokenType,
+        public left: Node,
+        public right: Node,
+        public comments: Node[] = []
+    ) {
         super(ENodeType.LogicOperator);
     }
 
@@ -25,6 +30,6 @@ export class LogicNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+        return `${this.commentsToString()}(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
     }
 }

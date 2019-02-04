@@ -1,6 +1,6 @@
 import * as beautifier from 'js-beautify';
 
-import { Analyser } from "../analyser/analyser";
+import { Analyser, IAnalyserOptions } from "../analyser/analyser";
 
 import { Node, ENodeType } from "../nodes/node";
 import { VariableDeclarationNode } from '../nodes/variables/variableDeclaration';
@@ -11,12 +11,12 @@ import { Context } from './context';
  * @param groovyCode the groovy code to convert
  * @param context the context where to the code will run
  */
-export function convert(groovyCode: string, context: any = { }): string {
+export function convert(groovyCode: string, options: IAnalyserOptions = { }): string {
     // Analyser
-    const a = new Analyser(groovyCode);
+    const a = new Analyser(groovyCode, options);
 
     // Scope
-    const contextMap = Context.BuildFrom(Object.assign({ }, context));
+    const contextMap = Context.BuildFrom(Object.assign({ }, options.context || { }));
     for (const k in contextMap)
         a.currentScope.variables.push(new VariableDeclarationNode(contextMap[k], k, null));
 

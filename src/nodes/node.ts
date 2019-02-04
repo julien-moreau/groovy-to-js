@@ -38,6 +38,10 @@ export class Node {
      * The node type
      */
     public nodeType: ENodeType;
+    /**
+     * Array of comments for this node
+     */
+    public comments: Node[] = [];
 
     /**
      * Constructor
@@ -45,6 +49,25 @@ export class Node {
      */
     constructor(type: ENodeType) {
         this.nodeType = type;
+    }
+
+    /**
+     * Sets the given comments to the node
+     * @param comments the comments to set to the node
+     */
+    public setComments(comments: Node[]): this {
+        this.comments = comments;
+        return this;
+    }
+
+    /**
+     * Returns the comments to string
+     */
+    public commentsToString(): string {
+        if (this.comments.length > 0)
+            return (this.comments.map(c => c.toString()).join("\n")) + "\n";
+            
+        return "";
     }
 
     /**

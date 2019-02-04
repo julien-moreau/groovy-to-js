@@ -57,6 +57,8 @@ export class Tokenizer {
     public pos: number;
     public end: number = 0;
 
+    public keepComments: boolean = true;
+
     public static ExcludedCharacters: string[] = [" ", "\n", "\r", "\t"];
     public static IsLetterPattern: RegExp = /^[a-zA-Z]+$/;
     public static IsNumberPattern: RegExp = /^[0-9]+$/;
@@ -244,6 +246,8 @@ export class Tokenizer {
                                     this._buffer += c;
                                     this.forward();
                                 }
+
+                                if (!this.keepComments) return this.getNextToken();
                                 break;
                         }
                     }
@@ -285,6 +289,8 @@ export class Tokenizer {
                                     if (c === "*" && (c = this.peek()) === "/") {
                                         this._buffer += "/";
                                         this.forward();
+
+                                        if (!this.keepComments) return this.getNextToken();
                                         break;
                                     }
                                 }

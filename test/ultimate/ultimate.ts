@@ -11,7 +11,7 @@ const template = `
 `;
 
 const execute = (str: string, ctx: any, expected: any) => {
-    const result = template.replace("{{code}}", convert(str, ctx));
+    const result = template.replace("{{code}}", convert(str, { context: ctx, keepComments: true }));
 
     const context = vm.createContext();
     Object.assign(context, ctx, { add, subtract, multiply, bitwiseLeft, spaceship });

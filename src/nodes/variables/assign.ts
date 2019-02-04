@@ -4,7 +4,11 @@ export class AssignNode extends Node {
     /**
      * Constructor
      */
-    constructor(public readonly left: Node, public readonly right: Node) {
+    constructor(
+        public readonly left: Node,
+        public readonly right: Node,
+        public comments: Node[] = []
+    ) {
         super(ENodeType.Assign);
     }
 
@@ -12,6 +16,6 @@ export class AssignNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        return `${this.left.toString()} = ${this.right.toString()}`;
+        return `${this.commentsToString()}${this.left.toString()} = ${this.right.toString()}`;
     }
 }

@@ -11,9 +11,13 @@ const unsupportedTypes: string[] = [
 export class BinaryOperatorNode extends Node {
     /**
      * Constructor
-     * @param data the binary operator data
      */
-    constructor(public operator: ETokenType, public left: Node, public right: Node) {
+    constructor(
+        public operator: ETokenType,
+        public left: Node,
+        public right: Node,
+        public comments: Node[] = []
+    ) {
         super(ENodeType.BinaryOperator);
     }
 
@@ -62,18 +66,18 @@ export class BinaryOperatorNode extends Node {
     public toString(): string {
         // Divide
         if (this.operator === ETokenType.Div || this.operator === ETokenType.SelfDivAssign)
-            return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+            return `${this.commentsToString()}(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
 
         if (this.operator !== ETokenType.SpaceShip) {
             // Constants?
             if (this.left instanceof ConstantNode && this.right instanceof ConstantNode)
-                return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+                return `${this.commentsToString()}(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
 
             // Variables?
             if (this.left instanceof VariableNode && this.left.type !== "array")
-                return `(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
+                return `${this.commentsToString()}(${this.left.toString()} ${this.operatorString} ${this.right.toString()})`;
         }
 
-        return `${this.operatorMethodString}(${this.left.toString()}, ${this.right.toString()})`;
+        return `${this.commentsToString()}${this.operatorMethodString}(${this.left.toString()}, ${this.right.toString()})`;
     }
 }

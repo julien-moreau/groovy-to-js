@@ -1,7 +1,9 @@
 import { Node, ENodeType } from "../node";
 
 const template =
-`function({{args}})
+`
+{{comments}}
+function({{args}})
 {{block}}`;
 
 const templateFull =
@@ -22,6 +24,7 @@ export class FunctionDeclarationNode extends Node {
     public toString(): string {
         const base = this.name ? templateFull : template;
         return base
+            .replace("{{comments}}", this.commentsToString())
             .replace("{{name}}", this.name)
             .replace("{{args}}", this.args.length === 0 ? "it" : this.args.map(a => a.toString()).join(", "))
             .replace("{{block}}", this.block.toString());
