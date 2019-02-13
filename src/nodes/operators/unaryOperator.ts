@@ -7,9 +7,9 @@ export class UnaryOperatorNode extends Node {
      * @param data the unary operator data
      */
     constructor(
-        public operator: ETokenType,
-        public right: Node,
-        public comments: Node[] = []
+        public readonly operator: ETokenType,
+        public readonly right: Node,
+        public readonly comments: Node[] = []
     ) {
         super(ENodeType.UnaryOperator);
     }

@@ -5,7 +5,7 @@ export class ReturnNode extends Node {
      * Constructor
      * @param type the node type
      */
-    constructor(public right: Node) {
+    constructor(public readonly right: Node) {
         super(ENodeType.Return);
     }
 

@@ -10,7 +10,7 @@ export class BlockNode extends Node {
      * Constructor
      * @param nodes all the nodes available in the block
      */
-    constructor(public nodes: Node[]) {
+    constructor(public readonly nodes: Node[]) {
         super(ENodeType.Block);
     }
 

@@ -11,7 +11,7 @@ export class WhileNode extends Node {
      * @param condition the condition node to stop loop
      * @param right the right node (block or instruction)
      */
-    constructor(public condition: Node, public right: Node) {
+    constructor(public readonly condition: Node, public readonly right: Node) {
         super(ENodeType.While);
     }
 

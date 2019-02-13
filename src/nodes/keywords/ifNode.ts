@@ -15,7 +15,11 @@ export class IfNode extends Node {
      * Constructor
      * @param data the binary operator data
      */
-    constructor(public condition: Node, public ifTrue: Node, public ifFalse: Node) {
+    constructor(
+        public readonly condition: Node,
+        public readonly ifTrue: Node,
+        public readonly ifFalse: Node
+    ) {
         super(ENodeType.Ternary);
     }
 

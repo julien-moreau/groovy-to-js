@@ -9,7 +9,7 @@ export class MapElementNode extends Node {
     /**
      * Constructor
      */
-    constructor(public left: Node, public right: Node) {
+    constructor(public readonly left: Node, public readonly right: Node) {
         super(ENodeType.MapElement);
     }
 

@@ -14,8 +14,8 @@ export class DoNode extends Node {
      * @param step the step part
      */
     constructor(
-        public block: Node,
-        public condition: Node
+        public readonly block: Node,
+        public readonly condition: Node
     ) {
         super(ENodeType.Do);
     }

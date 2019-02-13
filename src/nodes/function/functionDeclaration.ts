@@ -14,7 +14,11 @@ export class FunctionDeclarationNode extends Node {
     /**
      * Constructor
      */
-    constructor(public name: string, public args: Node[], public block: Node) {
+    constructor(
+        public readonly name: string,
+        public readonly args: Node[],
+        public readonly block: Node
+    ) {
         super(ENodeType.FunctionDeclaration);
     }
 

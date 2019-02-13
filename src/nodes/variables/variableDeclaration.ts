@@ -17,7 +17,11 @@ export class VariableDeclarationNode extends Node {
      * @param type the variable type
      * @param value the variable's value
      */
-    constructor(public type: string, public name: string, public value: Node) {
+    constructor(
+        public readonly type: string,
+        public readonly name: string,
+        public readonly value: Node
+    ) {
         super(ENodeType.VariableDeclaration);
     }
 

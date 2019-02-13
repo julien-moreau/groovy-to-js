@@ -13,10 +13,10 @@ export class ForNode extends Node {
      * @param step the step part
      */
     constructor(
-        public right: Node,
-        public init: Node = null,
-        public condition: Node = null,
-        public step: Node = null
+        public readonly right: Node,
+        public readonly init: Node = null,
+        public readonly condition: Node = null,
+        public readonly step: Node = null
     ) {
         super(ENodeType.For);
     }

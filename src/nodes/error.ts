@@ -5,7 +5,7 @@ export class ErrorNode extends Node {
      * Constructor
      * @param data the unary operator data
      */
-    constructor(public message: string) {
+    constructor(public readonly message: string) {
         super(ENodeType.Error);
     }
 

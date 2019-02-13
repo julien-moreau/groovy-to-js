@@ -7,7 +7,7 @@ export class ConstantNode extends Node {
      * Constructor
      * @param data the unary operator data
      */
-    constructor(public readonly value: PrimitiveType, public comments: Node[]) {
+    constructor(public readonly value: PrimitiveType, public readonly comments: Node[]) {
         super(ENodeType.Constant);
     }
 

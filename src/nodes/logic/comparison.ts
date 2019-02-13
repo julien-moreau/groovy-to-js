@@ -7,10 +7,10 @@ export class ComparisonNode extends Node {
      * @param data the binary operator data
      */
     constructor(
-        public comparison: ETokenType,
-        public left: Node,
-        public right: Node,
-        public comments: Node[] = []
+        public readonly comparison: ETokenType,
+        public readonly left: Node,
+        public readonly right: Node,
+        public readonly comments: Node[] = []
     ) {
         super(ENodeType.Comparison);
     }

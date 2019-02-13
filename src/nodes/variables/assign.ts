@@ -7,7 +7,7 @@ export class AssignNode extends Node {
     constructor(
         public readonly left: Node,
         public readonly right: Node,
-        public comments: Node[] = []
+        public readonly comments: Node[] = []
     ) {
         super(ENodeType.Assign);
     }

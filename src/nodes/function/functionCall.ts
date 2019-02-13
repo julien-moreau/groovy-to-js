@@ -6,7 +6,7 @@ export class FunctionCallNode extends Node {
     /**
      * Constructor
      */
-    constructor(public variable: Node, public args: Node[]) {
+    constructor(public readonly variable: Node, public readonly args: Node[]) {
         super(ENodeType.FunctionCall);
     }
 

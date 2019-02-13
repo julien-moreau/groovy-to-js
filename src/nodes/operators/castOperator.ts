@@ -4,7 +4,7 @@ export class CastOperatorNode extends Node {
     /**
      * Constructor
      */
-    constructor(public type: string, public right: Node) {
+    constructor(public readonly type: string, public readonly right: Node) {
         super(ENodeType.CastOperator);
     }
 

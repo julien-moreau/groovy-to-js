@@ -5,7 +5,7 @@ export class EndOfInstructionNode extends Node {
      * Constructor
      * @param type the node type
      */
-    constructor(public left: Node = null) {
+    constructor(public readonly left: Node = null) {
         super(ENodeType.EndOfInstruction);
     }
 

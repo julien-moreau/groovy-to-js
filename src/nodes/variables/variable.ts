@@ -7,11 +7,11 @@ export class VariableNode extends Node {
      * @param name: the variable's name
      */
     constructor(
-        public name: string,
-        public preOperator: ETokenType = null,
-        public postOperator: ETokenType = null,
-        public type: string = "any",
-        public comments: Node[] = []
+        public readonly name: string,
+        public readonly preOperator: ETokenType = null,
+        public readonly postOperator: ETokenType = null,
+        public readonly type: string = "any",
+        public readonly comments: Node[] = []
     ) {
         super(ENodeType.Variable);
     }

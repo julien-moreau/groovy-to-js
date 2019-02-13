@@ -7,10 +7,10 @@ export class LogicNode extends Node {
      * @param data the binary operator data
      */
     constructor(
-        public operator: ETokenType,
-        public left: Node,
-        public right: Node,
-        public comments: Node[] = []
+        public readonly operator: ETokenType,
+        public readonly left: Node,
+        public readonly right: Node,
+        public readonly comments: Node[] = []
     ) {
         super(ENodeType.LogicOperator);
     }
