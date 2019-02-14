@@ -198,4 +198,22 @@ describe("Analyser", () => {
         const a = new Analyser("+1").analyse() as UnaryOperatorNode;
         assert(a instanceof UnaryOperatorNode && a.operator === ETokenType.Plus && a.right instanceof ConstantNode);
     });
+
+    it("should convert double quoted strings", () => {
+        const a = new Analyser('"a"').analyse() as ConstantNode;
+        assert(a instanceof ConstantNode);
+        assert(a.valueString === "`a`");
+    });
+
+    it("should convert triple double quoted strings", () => {
+        const a = new Analyser('"""a"""').analyse() as ConstantNode;
+        assert(a instanceof ConstantNode);
+        assert(a.valueString === "`a`");
+    });
+
+    it("should convert triple single quoted strings", () => {
+        const a = new Analyser("'''a'''").analyse() as ConstantNode;
+        assert(a instanceof ConstantNode);
+        assert(a.valueString === "`a`");
+    });
 });

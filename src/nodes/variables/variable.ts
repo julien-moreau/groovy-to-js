@@ -11,7 +11,7 @@ export class VariableNode extends Node {
         public readonly preOperator: ETokenType = null,
         public readonly postOperator: ETokenType = null,
         public readonly type: string = "any",
-        public readonly comments: Node[] = []
+        public readonly comments: string[] = []
     ) {
         super(ENodeType.Variable);
     }

@@ -98,12 +98,14 @@ describe("Tokenizer", () => {
 
     it("should parse a comment", () => {
         const t = new Tokenizer("// Helloworld");
-        assert.equal(t.currentToken, ETokenType.Comment);
+        assert.equal(t.currentToken, ETokenType.EndOfInput);
+        assert.equal(t.comments.length, 1);
     });
 
     it("should parse a multiline comment", () => {
         const t = new Tokenizer("/* Helloworld */");
-        assert.equal(t.currentToken, ETokenType.MultilineComment);
+        assert.equal(t.currentToken, ETokenType.EndOfInput);
+        assert.equal(t.comments.length, 1);
     });
 
     it("should parse a multiline comment", () => {
@@ -112,6 +114,33 @@ describe("Tokenizer", () => {
          * Helloworld
          */
         `);
-        assert.equal(t.currentToken, ETokenType.MultilineComment);
+        assert.equal(t.currentToken, ETokenType.EndOfInput);
+        assert.equal(t.comments.length, 1);
+    });
+
+    it("should parse a single quoted string", () => {
+        const t = new Tokenizer("'hello'");
+        assert.equal(t.currentToken, ETokenType.SingleQuotedString);
+    });
+
+    it("should parse a double quoted string", () => {
+        const t = new Tokenizer('"hello"');
+        assert.equal(t.currentToken, ETokenType.DoubleQuotedString);
+    });
+
+    it("should parse a triple single quoted string", () => {
+        const t = new Tokenizer("'''hello'''");
+        assert.equal(t.currentToken, ETokenType.TripleSingleQuotedString);
+    });
+
+    it("should parse a triple double quoted string", () => {
+        const t = new Tokenizer("'''hello'''");
+        assert.equal(t.currentToken, ETokenType.TripleSingleQuotedString);
+    });
+
+    it("should parse a string which has escape character", () => {
+        const t = new Tokenizer(`'I\\'m you'`);
+        assert.equal(t.currentToken, ETokenType.SingleQuotedString);
+        assert.equal(t.currentString, `'I\\'m you'`);
     });
 });

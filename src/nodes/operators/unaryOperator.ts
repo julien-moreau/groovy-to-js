@@ -9,7 +9,7 @@ export class UnaryOperatorNode extends Node {
     constructor(
         public readonly operator: ETokenType,
         public readonly right: Node,
-        public readonly comments: Node[] = []
+        public readonly comments: string[] = []
     ) {
         super(ENodeType.UnaryOperator);
     }

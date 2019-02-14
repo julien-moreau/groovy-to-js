@@ -41,7 +41,7 @@ export class Node {
     /**
      * Array of comments for this node
      */
-    public comments: Node[] = [];
+    public comments: string[] = [];
 
     /**
      * Constructor
@@ -55,7 +55,7 @@ export class Node {
      * Sets the given comments to the node
      * @param comments the comments to set to the node
      */
-    public setComments(comments: Node[]): this {
+    public setComments(comments: string[]): this {
         this.comments = comments;
         return this;
     }

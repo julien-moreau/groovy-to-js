@@ -10,7 +10,7 @@ export class LogicNode extends Node {
         public readonly operator: ETokenType,
         public readonly left: Node,
         public readonly right: Node,
-        public readonly comments: Node[] = []
+        public readonly comments: string[] = []
     ) {
         super(ENodeType.LogicOperator);
     }

@@ -27,7 +27,6 @@ import { MapNode, MapElementNode } from "../nodes/types/map";
 import { FunctionDeclarationNode } from "../nodes/function/functionDeclaration";
 import { FunctionCallNode } from "../nodes/function/functionCall";
 import { CastOperatorNode } from "../nodes/operators/castOperator";
-import { CommentNode } from "../nodes/comment";
 
 export interface IAnalyserOptions {
     keepComments?: boolean;
@@ -46,8 +45,6 @@ export class Analyser {
      */
     constructor(str: string, options: IAnalyserOptions = { }) {
         this._tokenizer = new Tokenizer(str);
-        this._tokenizer.keepComments = options.keepComments || false;
-
         this._scopes = [new Scope()];
     }
 
@@ -97,35 +94,15 @@ export class Analyser {
     }
 
     /**
-     * Returns a array of comments available above the next node
-     * @param tokenizer the tokenizer reference
-     */
-    public getComments(tokenizer: Tokenizer): Node[] {
-        const result: Node[] = [];
-
-        let commentStr = this._tokenizer.currentString;
-        let commentToken = this._tokenizer.currentToken;
-
-        while (tokenizer.match(ETokenType.Comment) || tokenizer.match(ETokenType.MultilineComment)) {
-            result.push(new CommentNode(commentToken, commentStr));
-            commentStr = this._tokenizer.currentString;
-            commentToken = this._tokenizer.currentToken;
-        }
-
-        return result;
-    }
-
-    /**
      * Returns the top level expression (root node)
      * @param tokenizer the tokenizer reference
      */
     public getSuperExpression(tokenizer: Tokenizer): Node {
         // Expression
-        const eComments = this.getComments(tokenizer);
-        const e = this.getExpression(tokenizer).setComments(eComments);
+        const e = this.getExpression(tokenizer);
 
         // Assignement: a = ...
-        if (tokenizer.match(ETokenType.Equal)) return new AssignNode(e, this.getSuperExpression(tokenizer));
+        if (tokenizer.match(ETokenType.Equal)) return new AssignNode(e, this.getSuperExpression(tokenizer), tokenizer.getComments());
 
         // Ternary: a ? ... : ...;
         if (!tokenizer.match(ETokenType.QuestionMark))
@@ -149,7 +126,6 @@ export class Analyser {
         let left = this.getTerm(tokenizer);
 
         while (!tokenizer.isEnd && !(left instanceof ErrorNode)) {
-            const comments = this.getComments(tokenizer);
             const operator = tokenizer.currentToken;
 
             // "+"" or "-"" or "+="" or "-="" or "*=" or "/=""
@@ -158,7 +134,7 @@ export class Analyser {
                 tokenizer.match(ETokenType.SelfPlusAssign) || tokenizer.match(ETokenType.SelfMinusAssign) ||
                 tokenizer.match(ETokenType.SelfMultAssign) || tokenizer.match(ETokenType.SelfDivAssign)
             ) {
-                left = new BinaryOperatorNode(operator, left, this.getTerm(tokenizer), comments);
+                left = new BinaryOperatorNode(operator, left, this.getTerm(tokenizer), tokenizer.getComments());
                 continue;
             }
 
@@ -168,19 +144,19 @@ export class Analyser {
                 tokenizer.match(ETokenType.InferiorOrEqual) || tokenizer.match(ETokenType.SuperiorOrEqual) ||
                 tokenizer.match(ETokenType.Equality)
             ) {
-                left = new ComparisonNode(operator, left, this.getSuperExpression(tokenizer), comments);
+                left = new ComparisonNode(operator, left, this.getSuperExpression(tokenizer), tokenizer.getComments());
                 continue;
             }
 
             // "||"
             if (tokenizer.match(ETokenType.Or)) {
-                left = new LogicNode(operator, left, this.getSuperExpression(tokenizer), comments);
+                left = new LogicNode(operator, left, this.getSuperExpression(tokenizer), tokenizer.getComments());
                 continue;
             }
 
             // "<<" or ">>"
             if (tokenizer.match(ETokenType.BitwiseLeft) || tokenizer.match(ETokenType.BitwiseRight)) {
-                left = new BinaryOperatorNode(operator, left, this.getSuperExpression(tokenizer), comments);
+                left = new BinaryOperatorNode(operator, left, this.getSuperExpression(tokenizer), tokenizer.getComments());
                 continue;
             }
 
@@ -199,18 +175,17 @@ export class Analyser {
         let left = this.getFactor(tokenizer);
 
         while (!(left instanceof ErrorNode)) {
-            const comments = this.getComments(tokenizer);
             const operator = tokenizer.currentToken;
 
             // "*" or "/" or "<=>"
             if (tokenizer.match(ETokenType.Mult) || tokenizer.match(ETokenType.Div) || tokenizer.match(ETokenType.SpaceShip)) {
-                left = new BinaryOperatorNode(operator, left, this.getFactor(tokenizer), comments);
+                left = new BinaryOperatorNode(operator, left, this.getFactor(tokenizer), tokenizer.getComments());
                 continue;
             }
 
             // "&&"
             if (tokenizer.match(ETokenType.And)) {
-                left = new LogicNode(operator, left, this.getSuperExpression(tokenizer), comments);
+                left = new LogicNode(operator, left, this.getSuperExpression(tokenizer), tokenizer.getComments());
                 continue;
             }
 
@@ -226,22 +201,22 @@ export class Analyser {
      * @example factor: "+2", "-2", "-variable", "+variable", "(...)", "-(...)"
      */
     public getFactor(tokenizer: Tokenizer): Node {
-        const comments = this.getComments(tokenizer);
         const currentToken = tokenizer.currentToken;
 
         // Unary
         if (tokenizer.match(ETokenType.Minus) || tokenizer.match(ETokenType.Not) || tokenizer.match(ETokenType.Plus))
-            return new UnaryOperatorNode(currentToken, this.getFactor(tokenizer), comments);
+            return new UnaryOperatorNode(currentToken, this.getFactor(tokenizer), tokenizer.getComments());
 
         // pre "--"" or pre "++""
         if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus)) {
             const variableName = tokenizer.currentString;
             if (!tokenizer.match(ETokenType.Identifier)) return new ErrorNode("Expected an identifier");
 
-            return new VariableNode(variableName, currentToken, null, this.currentScope.getVariableType(variableName), comments);
+            return new VariableNode(variableName, currentToken, null, this.currentScope.getVariableType(variableName), tokenizer.getComments());
         }
 
-        return this.getPositiveFactor(tokenizer).setComments(comments);
+        const factorComments = tokenizer.getComments();
+        return this.getPositiveFactor(tokenizer).setComments(factorComments);
     }
 
     /**
@@ -250,25 +225,29 @@ export class Analyser {
      * @example positive factor: "2", "variable", "(...)"
      */
     public getPositiveFactor(tokenizer: Tokenizer): Node {
-        // Comments
-        const comments = this.getComments(tokenizer);
+        const currentString = tokenizer.currentString;
+        const currentToken = tokenizer.currentToken;
 
         // Number
-        const number = tokenizer.currentString;
         if (tokenizer.match(ETokenType.Number))
-            return new ConstantNode(parseInt(number), comments);
+            return new ConstantNode(parseInt(currentString), currentToken, tokenizer.getComments());
 
         // String
-        const identifier = tokenizer.currentString;
-        if (tokenizer.match(ETokenType.String))
-            return new ConstantNode(identifier, comments);
+        if (
+            tokenizer.match(ETokenType.SingleQuotedString) || tokenizer.match(ETokenType.TripleSingleQuotedString) ||
+            tokenizer.match(ETokenType.DoubleQuotedString) || tokenizer.match(ETokenType.TripleDoubleQuotedString)
+        ) {
+            return new ConstantNode(currentString, currentToken, tokenizer.getComments());
+        }
 
         // Identifier
         let variableOrTypeOrKeyword = tokenizer.currentString;
         if (tokenizer.match(ETokenType.Identifier)) {
             // Keyword?
-            if (keywords.indexOf(variableOrTypeOrKeyword) !== -1)
-                return this.getKeyword(variableOrTypeOrKeyword, tokenizer).setComments(comments);
+            if (keywords.indexOf(variableOrTypeOrKeyword) !== -1) {
+                const keywordComments = tokenizer.getComments();
+                return this.getKeyword(variableOrTypeOrKeyword, tokenizer).setComments(keywordComments);
+            }
 
             // Variable
             const variableName = tokenizer.currentString;
@@ -291,7 +270,7 @@ export class Analyser {
 
                 // "++"" or "--""
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
-                    return new VariableNode(variableOrTypeOrKeyword, null, postOperator, variableType, comments);
+                    return new VariableNode(variableOrTypeOrKeyword, null, postOperator, variableType, tokenizer.getComments());
 
                 // Method call
                 if (tokenizer.match(ETokenType.OpenBrace)) {
@@ -324,8 +303,10 @@ export class Analyser {
 
             if (!tokenizer.match(ETokenType.Equal)) { // No direct assign
                 if (tokenizer.match(ETokenType.OpenPar)) {
-                    if (tokenizer.match(ETokenType.ClosePar) && tokenizer.match(ETokenType.OpenBrace))
-                        return new FunctionDeclarationNode(variableName, [], this.getBlock(tokenizer)); // fn() { ... }
+                    if (tokenizer.match(ETokenType.ClosePar) && tokenizer.match(ETokenType.OpenBrace)) {
+                        const blockComments = tokenizer.getComments();
+                        return new FunctionDeclarationNode(variableName, [], this.getBlock(tokenizer).setComments(blockComments)); // fn() { ... }
+                    }
 
                     // Function definition
                     const fnArguments = this.getList(tokenizer);
@@ -397,14 +378,16 @@ export class Analyser {
      * @example "1, 2,3, 'coucou', []" etc.
      */
     public getList(tokenizer: Tokenizer): { isArray: boolean; nodes: Node[] } {
-        const first = this.getSuperExpression(tokenizer);
+        const firstComments = tokenizer.getComments();
+        const first = this.getSuperExpression(tokenizer).setComments(tokenizer.getComments());
 
         if (!tokenizer.match(ETokenType.Colon)) {
             // Just an array
             const array: Node[] = [first];
 
             while (tokenizer.match(ETokenType.Comma)) {
-                const e = this.getSuperExpression(tokenizer);
+                const eComments = tokenizer.getComments();
+                const e = this.getSuperExpression(tokenizer).setComments(eComments);
                 if (e instanceof ErrorNode) return { isArray: true, nodes: [e] };
                 array.push(e);
             }
@@ -416,12 +399,14 @@ export class Analyser {
         const map: Node[] = [];
 
         // Get first map element
-        const value = this.getSuperExpression(tokenizer);
+        const valueComments = tokenizer.getComments();
+        const value = this.getSuperExpression(tokenizer).setComments(valueComments);
         map.push(new MapElementNode(first, value));
 
         while (tokenizer.match(ETokenType.Comma)) {
             // Left
-            const left = this.getSuperExpression(tokenizer);
+            const leftComments = tokenizer.getComments();
+            const left = this.getSuperExpression(tokenizer).setComments(leftComments);
             if (left instanceof ErrorNode) return { isArray: false, nodes: [left] };
 
             // :
@@ -429,7 +414,8 @@ export class Analyser {
                 return { isArray: false, nodes: [new ErrorNode("Expected a colon")] };
 
             // Right
-            const right = this.getSuperExpression(tokenizer);
+            const rightComments = tokenizer.getComments();
+            const right = this.getSuperExpression(tokenizer).setComments(rightComments);
             if (right instanceof ErrorNode) return { isArray: false, nodes: [right] };
 
             map.push(new MapElementNode(left, right));
@@ -448,11 +434,15 @@ export class Analyser {
         switch (keyword) {
             // Return
             case "return":
-                return new ReturnNode(this.getSuperExpression(tokenizer));
+                const returnComments = tokenizer.getComments();
+                return new ReturnNode(this.getSuperExpression(tokenizer)).setComments(returnComments);
             // If
             case "if":
-                const ifCondition = this.getSuperExpression(tokenizer);
-                let ifTrue = (tokenizer.match(ETokenType.OpenBrace)) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer);
+                const ifComments = tokenizer.getComments();
+                const ifCondition = this.getSuperExpression(tokenizer).setComments(ifComments);
+
+                const ifTrueComments = tokenizer.getComments();
+                let ifTrue = (tokenizer.match(ETokenType.OpenBrace)) ? this.getBlock(tokenizer) : this.getSuperExpression(tokenizer).setComments(ifTrueComments);
 
                 // ;
                 if (tokenizer.match(ETokenType.SemiColon))

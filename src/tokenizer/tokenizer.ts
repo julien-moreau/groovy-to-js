@@ -4,7 +4,7 @@ export enum ETokenType {
     IsBracket = 1 << 11,
     IsBinaryOperator = 1 << 12,
     Number = 1 << 13,
-    String = 1 << 14,
+    IsString = 1 << 14,
     IsLogicOperator = 1 << 15,
     
     Plus = IsBinaryOperator + 0,
@@ -24,6 +24,11 @@ export enum ETokenType {
 
     And = IsLogicOperator + 0,
     Or = IsLogicOperator + 1,
+
+    SingleQuotedString = IsString + 1,
+    TripleSingleQuotedString = IsString + 2,
+    DoubleQuotedString = IsString + 3,
+    TripleDoubleQuotedString = IsString + 4,
     
     OpenPar = IsBracket + 0,
     ClosePar = IsBracket + 1,
@@ -57,13 +62,13 @@ export class Tokenizer {
     public pos: number;
     public end: number = 0;
 
-    public keepComments: boolean = true;
-
     public static ExcludedCharacters: string[] = [" ", "\n", "\r", "\t"];
     public static IsLetterPattern: RegExp = /^[a-zA-Z]+$/;
     public static IsNumberPattern: RegExp = /^[0-9]+$/;
     public static IsOperatorPattern: RegExp = /^[+-/*]+$/;
     public static IsLogicOperatorPattern: RegExp = /^[&|]+$/;
+
+    public comments: string[] = [];
 
     private _type: ETokenType = ETokenType.None;
     private _buffer: string = "";
@@ -120,6 +125,16 @@ export class Tokenizer {
      */
     public forward(): void {
         this.pos++;
+    }
+
+    /**
+     * Returns the list of comments
+     */
+    public getComments(): string[] {
+        const c = this.comments;
+        this.comments = [];
+
+        return c;
     }
 
     /**
@@ -196,15 +211,34 @@ export class Tokenizer {
                 }
                 // String
                 else if (c === '"' || c === "'") {
-                    this._type = ETokenType.String;
+                    this._type = (c === '"') ? ETokenType.DoubleQuotedString : ETokenType.SingleQuotedString;
                     this._buffer = c;
-                    while (!this.isEnd && (c = this.peek()) !== '"' && c !== "'") {
+
+                    const baseQuoteType = c;
+
+                    // Check for triple
+                    while (!this.isEnd && (c = this.peek()) === baseQuoteType) {
                         this._buffer += c;
                         this.forward();
                     }
 
-                    this._buffer += c;
-                    this.forward();
+                    // Check is valid
+                    if (this._buffer.length !== 1 && this._buffer.length !== 3) return (this._type = ETokenType.Error);
+                    if (this._buffer.length === 3)
+                        this._type = (this._buffer === "'''") ? ETokenType.TripleSingleQuotedString : ETokenType.TripleDoubleQuotedString;
+
+                    let lastChar = null;
+                    while (!this.isEnd && ((c = this.peek()) !== baseQuoteType || lastChar === "\\")) {
+                        this._buffer += c;
+                        lastChar = c;
+                        this.forward();
+                    }
+
+                    // Check end of string (in case of triple quoted strings)
+                    while (!this.isEnd && (c = this.peek()) === baseQuoteType) {
+                        this._buffer += c;
+                        this.forward();
+                    }
                 }
                 // Logic operator
                 else if (Tokenizer.IsLogicOperatorPattern.test(c)) {
@@ -247,7 +281,11 @@ export class Tokenizer {
                                     this.forward();
                                 }
 
-                                if (!this.keepComments) return this.getNextToken();
+                                this.comments = [this._buffer];
+                                while(this.getNextToken() === ETokenType.Comment || this.currentToken === ETokenType.MultilineComment) {
+                                    this.comments.push(this._buffer);
+                                }
+
                                 break;
                         }
                     }
@@ -290,7 +328,10 @@ export class Tokenizer {
                                         this._buffer += "/";
                                         this.forward();
 
-                                        if (!this.keepComments) return this.getNextToken();
+                                        this.comments = [this._buffer];
+                                        while(this.getNextToken() === ETokenType.Comment || this.currentToken === ETokenType.MultilineComment) {
+                                            this.comments.push(this._buffer);
+                                        }
                                         break;
                                     }
                                 }
