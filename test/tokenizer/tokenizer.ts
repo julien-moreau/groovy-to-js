@@ -143,4 +143,16 @@ describe("Tokenizer", () => {
         assert.equal(t.currentToken, ETokenType.SingleQuotedString);
         assert.equal(t.currentString, `'I\\'m you'`);
     });
+
+    it("should parse a string which has a \\ character", () => {
+        const t = new Tokenizer("'Hello\\ 2'");
+        assert.equal(t.currentToken, ETokenType.SingleQuotedString);
+        assert.equal(t.currentString, "'Hello\\ 2'");
+    });
+
+    it("should parse a triple single quoted string with has a single quote in it", () => {
+        const t = new Tokenizer("'''I'm you'''");
+        assert.equal(t.currentToken, ETokenType.TripleSingleQuotedString);
+        assert.equal(t.currentString, `'''I'm you'''`);
+    });
 });

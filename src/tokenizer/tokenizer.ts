@@ -223,21 +223,25 @@ export class Tokenizer {
                     }
 
                     // Check is valid
-                    if (this._buffer.length !== 1 && this._buffer.length !== 3) return (this._type = ETokenType.Error);
-                    if (this._buffer.length === 3)
+                    const quotesLength = this._buffer.length;
+                    if (quotesLength !== 1 && quotesLength !== 3) return (this._type = ETokenType.Error);
+                    if (quotesLength === 3)
                         this._type = (this._buffer === "'''") ? ETokenType.TripleSingleQuotedString : ETokenType.TripleDoubleQuotedString;
 
+                    let endQuotesLength  = 1;
                     let lastChar = null;
-                    while (!this.isEnd && ((c = this.peek()) !== baseQuoteType || lastChar === "\\")) {
-                        this._buffer += c;
-                        lastChar = c;
-                        this.forward();
-                    }
 
-                    // Check end of string (in case of triple quoted strings)
-                    while (!this.isEnd && (c = this.peek()) === baseQuoteType) {
+                    while (!this.isEnd) {
+                        c = this.peek();
+
                         this._buffer += c;
                         this.forward();
+
+                        if (lastChar !== "\\" && c === baseQuoteType) endQuotesLength++;
+                        if (c !== baseQuoteType) endQuotesLength = 0;
+                        if (endQuotesLength === quotesLength) break;
+
+                        lastChar = c;
                     }
                 }
                 // Logic operator
