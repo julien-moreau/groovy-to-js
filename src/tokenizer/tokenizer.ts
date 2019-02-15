@@ -222,8 +222,12 @@ export class Tokenizer {
                         this.forward();
                     }
 
-                    // Check is valid
                     const quotesLength = this._buffer.length;
+                    // Check empty string
+                    if (quotesLength === 2)
+                        return this._type;
+
+                    // Check is valid
                     if (quotesLength !== 1 && quotesLength !== 3) return (this._type = ETokenType.Error);
                     if (quotesLength === 3)
                         this._type = (this._buffer === "'''") ? ETokenType.TripleSingleQuotedString : ETokenType.TripleDoubleQuotedString;

@@ -27,6 +27,7 @@ import { MapNode, MapElementNode } from "../nodes/types/map";
 import { FunctionDeclarationNode } from "../nodes/function/functionDeclaration";
 import { FunctionCallNode } from "../nodes/function/functionCall";
 import { CastOperatorNode } from "../nodes/operators/castOperator";
+import { ArrayAccessorNode } from "../nodes/types/arrayAccessor";
 
 export interface IAnalyserOptions {
     keepComments?: boolean;
@@ -260,14 +261,21 @@ export class Analyser {
                 variableOrTypeOrKeyword += `.${member}`;
             }
 
+            // In case of x.y
+            const members = variableOrTypeOrKeyword.split(".");
+            const variableType = members.length === 1
+                ? this.currentScope.getVariableType(variableOrTypeOrKeyword)
+                : this.currentScope.getVariableType(members.slice(0, members.length - 1).join("."));
+
+            // Array accessor? varialbe[...]
+            if (tokenizer.match(ETokenType.OpenBracket)) {
+                const l = this.getList(tokenizer);
+                if (!tokenizer.match(ETokenType.CloseBracket)) return new ErrorNode("Expected a closing bracket");
+                return new ArrayAccessorNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), l.nodes);
+            }
+
             const postOperator = tokenizer.currentToken;
             if (!tokenizer.match(ETokenType.Identifier)) {
-                // In case of x.y
-                const members = variableOrTypeOrKeyword.split(".");
-                const variableType = members.length === 1
-                    ? this.currentScope.getVariableType(variableOrTypeOrKeyword)
-                    : this.currentScope.getVariableType(members.slice(0, members.length - 1).join("."));
-
                 // "++"" or "--""
                 if (tokenizer.match(ETokenType.SelfMinus) || tokenizer.match(ETokenType.SelfPlus))
                     return new VariableNode(variableOrTypeOrKeyword, null, postOperator, variableType, tokenizer.getComments());

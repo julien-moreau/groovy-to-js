@@ -16,6 +16,8 @@ export enum ENodeType {
     FunctionCall = 13,
     CastOperator = 14,
 
+    ArrayAccessor = 15,
+
     // Keywords
     Return = 100,
     If = 101,

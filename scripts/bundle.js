@@ -14,6 +14,9 @@ function bundle (name, options) {
 
   builder
     .buildStatic('./.build/src/index.js', name, options)
+    .then(function () {
+      console.log('Finished bundling ' + name);
+    })
     .catch(function (err) {
         console.log(err);
     });
@@ -26,14 +29,12 @@ bundle('./dist/groovy-to-js.js', {
   externals: ['js-beautify']
 });
 
-/*
-bundle('./dist/groovy-to-js.min.js', {
-  globalName: 'GTJ',
-  format: 'cjs',
-  minify: true,
-  externals: ['js-beautify']
-});
-*/
+// bundle('./dist/groovy-to-js.min.js', {
+//   globalName: 'GTJ',
+//   format: 'cjs',
+//   minify: true,
+//   externals: ['js-beautify']
+// });
 
 // Bundle DTS
 dts.bundle({
