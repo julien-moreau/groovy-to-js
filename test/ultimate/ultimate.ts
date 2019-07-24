@@ -2,10 +2,13 @@ import * as assert from "assert";
 import * as vm from 'vm';
 
 import { convert } from "../../src/converter/converter";
-import { add, subtract, multiply, bitwiseLeft, spaceship } from "../../src/augmentations/operators";
+import { augmentify, augmentifyOperators } from "../../src/augmentations/index";
+import { augmentifyArray } from "../../src/augmentations/array";
 
 const template = `
 (function() {
+augmentifyOperators(this);
+augmentifyArray(Array);
 {{code}}
 })();
 `;
@@ -14,7 +17,7 @@ const execute = (str: string, ctx: any, expected: any) => {
     const result = template.replace("{{code}}", convert(str, { context: ctx, keepComments: true }));
 
     const context = vm.createContext();
-    Object.assign(context, ctx, { add, subtract, multiply, bitwiseLeft, spaceship });
+    Object.assign(context, augmentifyOperators(ctx), { augmentifyOperators, augmentifyArray });
 
     const script = new vm.Script(result);
     const actual = script.runInContext(context) as any[];

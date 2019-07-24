@@ -21,7 +21,10 @@ export class ConstantNode extends Node {
      */
     public get valueString(): string {
         switch (this.type) {
-            case ETokenType.DoubleQuotedString: return this.value.toString().replace(/"/g, '`');
+            case ETokenType.DoubleQuotedString:
+                const copy = this.value.toString();
+                const length = copy.length;
+                return copy[0] + copy.substr(1, length - 2) + copy[length - 1];
             case ETokenType.TripleDoubleQuotedString: return this.value.toString().replace(/"""/g, '`');
             case ETokenType.TripleSingleQuotedString: return this.value.toString().replace(/'''/g, '`');
             default: return this.value.toString();

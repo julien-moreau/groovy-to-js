@@ -216,4 +216,16 @@ describe("Analyser", () => {
         assert(a instanceof ConstantNode);
         assert(a.valueString === "`a`");
     });
+
+    it("should parse backslashes", () => {
+        const a = new Analyser('"<table class=\\"tableaux\\" width=\\"100%\\">"').analyse() as ConstantNode;
+        assert(a instanceof ConstantNode);
+        assert(a.valueString === '"<table class=\\"tableaux\\" width=\\"100%\\">"');
+    });
+
+    it.only("should parse member accessor with array then member accessor", () => {
+        const a = new Analyser("a.b[0].c").analyse() as ConstantNode;
+        assert(a instanceof ConstantNode);
+        assert(a.valueString === "a.b[0].c");
+    });
 });

@@ -33,9 +33,10 @@ export class FunctionCallNode extends Node {
         if (effectiveMethod)
             return `${this.commentsToString()}${members.slice(0, members.length - 1).join(".") + "." + effectiveMethod}(${this.args.map(a => a.toString()).join(", ")})`;
 
-        const effectiveProperty = effectiveDict.methodToproperty[method];
-        if (effectiveProperty)
-            return `${this.commentsToString()}${members.slice(0, members.length - 1).join(".") + "." + effectiveProperty}`;
+        // TODO: effective properties should not be supported as the transpiler doesn't know runtime's variables
+        // const effectiveProperty = effectiveDict.methodToproperty[method];
+        // if (effectiveProperty)
+        //     return `${this.commentsToString()}${members.slice(0, members.length - 1).join(".") + "." + effectiveProperty}`;
 
         return base;
     }

@@ -62,6 +62,8 @@ export class Tokenizer {
     public pos: number;
     public end: number = 0;
 
+    public lineNumber: number = 1;
+
     public static ExcludedCharacters: string[] = [" ", "\n", "\r", "\t"];
     public static IsLetterPattern: RegExp = /^[a-zA-Z]+$/;
     public static IsNumberPattern: RegExp = /^[0-9]+$/;
@@ -160,6 +162,9 @@ export class Tokenizer {
         // 2- white space
         let c: string;
         while (Tokenizer.ExcludedCharacters.indexOf((c = this.read())) !== -1) {
+            if (c === '\n')
+                this.lineNumber++;
+            
             if (this.isEnd) return (this._type = ETokenType.EndOfInput);
         }
 

@@ -35,9 +35,12 @@ export interface IAnalyserOptions {
 }
 
 export class Analyser {
-    private _tokenizer: Tokenizer;
-    private _scopes: Scope[];
+    /**
+     * Tokenizer reference.
+     */
+    public tokenizer: Tokenizer;
 
+    private _scopes: Scope[];
     private _root: Node = null;
 
     /**
@@ -45,7 +48,7 @@ export class Analyser {
      * @param str the groovy string to parse
      */
     constructor(str: string, options: IAnalyserOptions = { }) {
-        this._tokenizer = new Tokenizer(str);
+        this.tokenizer = new Tokenizer(str);
         this._scopes = [new Scope()];
     }
 
@@ -53,7 +56,7 @@ export class Analyser {
      * Analyses the code to return the root node of the current super-expression
      */
     public analyse(): Node {
-        return (this._root = this.getSuperExpression(this._tokenizer));
+        return (this._root = this.getSuperExpression(this.tokenizer));
     }
 
     /**
@@ -67,7 +70,7 @@ export class Analyser {
      * Returns if the anlyser analysed all the code
      */
     public get isEnd(): boolean {
-        return this._tokenizer.isEnd;
+        return this.tokenizer.isEnd;
     }
 
     /**
@@ -81,14 +84,14 @@ export class Analyser {
      * Returns the current position of the tokenizer
      */
     public get currentPos(): number {
-        return this._tokenizer.pos;
+        return this.tokenizer.pos;
     }
 
     /**
      * Returns if the current token is a semicolon (end of instruction)
      */
     public isEndOfInstruction(): Node {
-        if (this._tokenizer.match(ETokenType.SemiColon))
+        if (this.tokenizer.match(ETokenType.SemiColon))
             return new EndOfInstructionNode();
 
         return null;
