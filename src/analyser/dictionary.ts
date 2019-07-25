@@ -14,7 +14,8 @@ export const naviveTypes: string[] = [
 export const keywords: string[] = [
     "if", "else",
     "return",
-    "break", "while", "for", "do"
+    "break", "while", "for", "do",
+    "switch", "case"
 ];
 
 export const translation = {

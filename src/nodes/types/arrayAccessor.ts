@@ -6,7 +6,7 @@ export class ArrayAccessorNode extends Node {
      * Constructor
      * @param data the unary operator data
      */
-    constructor(public readonly variable: VariableNode, public readonly elements: Node[]) {
+    constructor(public readonly variable: VariableNode, public readonly elements: Node[], public readonly right: Node = null) {
         super(ENodeType.ArrayAccessor);
     }
 
@@ -14,6 +14,6 @@ export class ArrayAccessorNode extends Node {
      * Returns the node's string
      */
     public toString(): string {
-        return `${this.variable.toString()}[${this.elements.map(e => e.toString()).join(", ")}]`;
+        return `${this.variable.toString()}[${this.elements.map(e => e.toString()).join(", ")}]${this.right ? '.' + this.right.toString() : ''}`;
     }
 }

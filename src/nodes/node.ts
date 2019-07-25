@@ -25,6 +25,8 @@ export enum ENodeType {
     For = 103,
     Break = 104,
     Do = 105,
+    Switch = 106,
+    Case = 107,
 
     Block = 200,
 

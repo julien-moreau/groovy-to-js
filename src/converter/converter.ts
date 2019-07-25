@@ -26,8 +26,7 @@ export function convert(groovyCode: string, options: IAnalyserOptions = { }): st
         // Super expresion
         const n = a.analyse();
         if (n.nodeType === ENodeType.Error) {
-            debugger;
-            throw new Error(`Error at pos: ${a.currentPos}, line: ${a.tokenizer.lineNumber}: ${n.toString()}`);
+            throw new Error(`Error at pos: ${a.currentPos}, line: ${a.tokenizer.lineNumber}: ${n.toString()}\n${a.tokenizer.getExcerpt(50)}`);
         }
 
         result.push(n.toString());

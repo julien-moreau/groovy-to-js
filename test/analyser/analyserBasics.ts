@@ -13,6 +13,7 @@ import { EndOfInstructionNode } from "../../src/nodes/endOfInstruction";
 import { LogicNode } from "../../src/nodes/operators/logicOperator";
 import { CastOperatorNode } from "../../src/nodes/operators/castOperator";
 import { UnaryOperatorNode } from "../../src/nodes/operators/unaryOperator";
+import { ArrayAccessorNode } from "../../src/nodes/types/arrayAccessor";
 
 describe("Analyser", () => {
     it("should expose current root node", () => {
@@ -202,7 +203,7 @@ describe("Analyser", () => {
     it("should convert double quoted strings", () => {
         const a = new Analyser('"a"').analyse() as ConstantNode;
         assert(a instanceof ConstantNode);
-        assert(a.valueString === "`a`");
+        assert(a.valueString === '"a"');
     });
 
     it("should convert triple double quoted strings", () => {
@@ -223,9 +224,9 @@ describe("Analyser", () => {
         assert(a.valueString === '"<table class=\\"tableaux\\" width=\\"100%\\">"');
     });
 
-    it.only("should parse member accessor with array then member accessor", () => {
-        const a = new Analyser("a.b[0].c").analyse() as ConstantNode;
-        assert(a instanceof ConstantNode);
-        assert(a.valueString === "a.b[0].c");
+    it("should parse member accessor with array then member accessor", () => {
+        const a = new Analyser("a.b[0].c").analyse() as ArrayAccessorNode;
+        assert(a instanceof ArrayAccessorNode);
+        assert(a.toString() === "a.b[0].c");
     });
 });

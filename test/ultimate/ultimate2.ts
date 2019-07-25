@@ -27,7 +27,7 @@ const execute = (str: string, ctx: any, expected: any) => {
 };
 
 describe("Ultimate", () => {
-    it("should parse the given code", () => {
+    it.only("should parse the given code", () => {
         execute(`
         def header = "";
         def content = "";

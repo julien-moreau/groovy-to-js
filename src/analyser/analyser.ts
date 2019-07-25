@@ -28,6 +28,7 @@ import { FunctionDeclarationNode } from "../nodes/function/functionDeclaration";
 import { FunctionCallNode } from "../nodes/function/functionCall";
 import { CastOperatorNode } from "../nodes/operators/castOperator";
 import { ArrayAccessorNode } from "../nodes/types/arrayAccessor";
+import { SwitchNode, CaseNode } from "../nodes/keywords/switch";
 
 export interface IAnalyserOptions {
     keepComments?: boolean;
@@ -142,11 +143,11 @@ export class Analyser {
                 continue;
             }
 
-            // <, <=, >, >= or ==
+            // <, <=, >, >=, == or !=
             if (
                 tokenizer.match(ETokenType.Inferior) || tokenizer.match(ETokenType.Superior) ||
                 tokenizer.match(ETokenType.InferiorOrEqual) || tokenizer.match(ETokenType.SuperiorOrEqual) ||
-                tokenizer.match(ETokenType.Equality)
+                tokenizer.match(ETokenType.Equality) || tokenizer.match(ETokenType.Inequality)
             ) {
                 left = new ComparisonNode(operator, left, this.getSuperExpression(tokenizer), tokenizer.getComments());
                 continue;
@@ -274,7 +275,11 @@ export class Analyser {
             if (tokenizer.match(ETokenType.OpenBracket)) {
                 const l = this.getList(tokenizer);
                 if (!tokenizer.match(ETokenType.CloseBracket)) return new ErrorNode("Expected a closing bracket");
-                return new ArrayAccessorNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), l.nodes);
+                if (!tokenizer.match(ETokenType.Dot))
+                    return new ArrayAccessorNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), l.nodes);
+
+                // Accessing members
+                return new ArrayAccessorNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), l.nodes, this.getSuperExpression(tokenizer));
             }
 
             const postOperator = tokenizer.currentToken;
@@ -286,7 +291,7 @@ export class Analyser {
                 // Method call
                 if (tokenizer.match(ETokenType.OpenBrace)) {
                     const f = this.getFunction(tokenizer);
-                    return new FunctionCallNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), [new FunctionDeclarationNode(null, f.arguments, f.block)]);
+                    return f.error || new FunctionCallNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), [new FunctionDeclarationNode(null, f.arguments, f.block)]);
                 }
 
                 if (tokenizer.match(ETokenType.OpenPar)) {
@@ -294,7 +299,7 @@ export class Analyser {
                         // () { }
                         if (tokenizer.match(ETokenType.OpenBrace)) {
                             const f = this.getFunction(tokenizer);
-                            return new FunctionCallNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), [new FunctionDeclarationNode(null, f.arguments, f.block)]);
+                            return f.error || new FunctionCallNode(new VariableNode(variableOrTypeOrKeyword, null, null, variableType), [new FunctionDeclarationNode(null, f.arguments, f.block)]);
                         }
 
                         // ();
@@ -368,7 +373,7 @@ export class Analyser {
         // Closure
         if (tokenizer.match(ETokenType.OpenBrace)) {
             const f = this.getFunction(tokenizer);
-            return new FunctionDeclarationNode(null, f.arguments, f.block);
+            return f.error || new FunctionDeclarationNode(null, f.arguments, f.block);
         }
 
         // Super expression
@@ -515,6 +520,46 @@ export class Analyser {
             // Break
             case "break":
                 return new BreakNode();
+            // Switch
+            case "switch":
+                if (!tokenizer.match(ETokenType.OpenPar)) return new ErrorNode("Expected opening parenthesis for switch statement.");
+                const switchCondition = this.getSuperExpression(tokenizer);
+                if (!tokenizer.match(ETokenType.ClosePar)) return new ErrorNode("Expected closing parenthesis for switch statement");
+                if (!tokenizer.match(ETokenType.OpenBrace)) return new ErrorNode("Expected an opening bracket for switch statement");
+
+                const cases: Node[] = [];
+                while (!tokenizer.match(ETokenType.CloseBrace))
+                    cases.push(this.getSuperExpression(tokenizer));
+                
+                return new SwitchNode(switchCondition, cases);
+            // Case
+            case "case":
+            case "default":
+                const caseCondition = this.getSuperExpression(tokenizer);
+                if (caseCondition instanceof ErrorNode) return caseCondition;
+                if (!this.tokenizer.match(ETokenType.Colon)) return new ErrorNode("Expected colon (':') after case in switch statement");
+
+                let blockNode: Node = null;
+                let breakNode: Node = null;
+
+                if (tokenizer.match(ETokenType.OpenBrace)) {
+                    blockNode = this.getBlock(tokenizer);
+                }
+                else {
+                    const blockNodes: Node[] = [];
+                    while (!((breakNode = this.getSuperExpression(tokenizer)) instanceof BreakNode)) {
+                        blockNodes.push(breakNode);
+                        
+                        const end = this.isEndOfInstruction();
+                        if (end) blockNodes.push(end);
+                    }
+                    blockNode = new BlockNode(blockNodes);
+                }
+
+                if (breakNode && breakNode instanceof BreakNode)
+                    return new CaseNode(caseCondition, blockNode, breakNode);
+
+                return new CaseNode(caseCondition, blockNode, null);
 
             // Not supported
             default:
@@ -589,11 +634,26 @@ export class Analyser {
         // Convert last instruction of function to a return node as groovy guesses the returned value
         if (nodes.length > 0) {
             const end = nodes.pop();
+            let canReturn = true;
+
+            // TODO: Not proud of this
             if (end instanceof EndOfInstructionNode) {
-                nodes.push(new ReturnNode(nodes.pop()));
-                nodes.push(end);
+                const endEnd = nodes.pop();
+                canReturn = !(endEnd instanceof SwitchNode);
+                nodes.push(endEnd);
             } else {
-                nodes.push(new ReturnNode(end));
+                canReturn = !(end instanceof SwitchNode);
+            }
+
+            if (canReturn) {
+                if (end instanceof EndOfInstructionNode) {
+                    nodes.push(new ReturnNode(nodes.pop()));
+                    nodes.push(end);
+                } else {
+                    nodes.push(new ReturnNode(end));
+                }
+            } else {
+                nodes.push(end);
             }
         }
 

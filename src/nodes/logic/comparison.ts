@@ -25,6 +25,7 @@ export class ComparisonNode extends Node {
             case ETokenType.Superior: return ">";
             case ETokenType.SuperiorOrEqual: return ">=";
             case ETokenType.Equality: return "===";
+            case ETokenType.Inequality: return "!==";
             default: throw new Error("Invalid comparison.");
         }
     }

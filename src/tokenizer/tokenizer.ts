@@ -49,6 +49,7 @@ export enum ETokenType {
     SuperiorOrEqual = 10,
     Dot = 11,
     Pointer = 12,
+    Inequality = 13,
 
     Comment = 100,
     MultilineComment = 101,
@@ -170,7 +171,7 @@ export class Tokenizer {
 
         // 3- Terminals
         switch (c) {
-            case "!": return (this._type = ETokenType.Not);
+            // case "!": return (this._type = ETokenType.Not);
             case "(": return (this._type = ETokenType.OpenPar);
             case ")": return (this._type = ETokenType.ClosePar);
             case "[": return (this._type = ETokenType.OpenBracket);
@@ -390,6 +391,17 @@ export class Tokenizer {
                         this.forward();
                     }
                 }
+                // Not (!)
+                else if (c === "!") {
+                    this._type = ETokenType.Not;
+                    this._buffer = c;
+
+                    if ((c = this.peek()) === "=") {
+                        this._type = ETokenType.Inequality;
+                        this._buffer += c;
+                        this.forward();
+                    }
+                }
                 else {
                     this._type = ETokenType.Error;
                 }
@@ -397,5 +409,16 @@ export class Tokenizer {
         }
 
         return this._type;
+    }
+
+    /**
+     * Returns an excerpt of the code crashing.
+     * @param length the length of the excerpt before and after the current tokenizer position.
+     */
+    public getExcerpt(length: number = 25): string {
+        const start = Math.max(0, this.pos - length);
+        const end = Math.min(this.end, this.pos + length);
+
+        return this.toParse.substring(start, end);
     }
 }
